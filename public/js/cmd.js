@@ -2,11 +2,6 @@ var auth = false;
 		var start_flag = false;
 		jQuery(function($, undefined) {
             $('body').terminal({
-				// start: function() {
-				// 	this.echo("Do you have a samaritan? (y/n)");
-				// 	var div = $('<p>Hello <strong>World</strong></p>')
-				// 	this.echo(div);
-				// },
 
 				start: function() {
 					if (start_flag) 
@@ -24,8 +19,12 @@ var auth = false;
 								);
 							}
 							else {
-								this.echo('Creating a new Samaritan for you...');
+								// connect to chain cand create keypair
+								this.echo('Creating a new Samaritan on chain for you...');
 								this.echo('You have 30 seconds to copy your keys.');
+
+								this.pause();
+								
 								this.echo('Your keys are: [[bg;green;]django police zebra coffee arm polite flight lobby destroy candle monopoly pattern]');
 								this.pause();
 									setTimeout(() => {
@@ -43,12 +42,6 @@ var auth = false;
 						this.exec('start', true);
 
 				},
-
-				test: function() {
-					this.echo('https://x.com');
-					this.error("Failed to connect to chain");
-					this.reset();
-				}
 
 			}, {
                 greetings: function () {

@@ -2,8 +2,26 @@
 <html>
     <head></head>
     <body>
-        <h1>Thi is greatclea</h1>
+        <h1 class="head">Thi is greatclea</h1>
         <script>
+            fetch ("/bhash", {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Allow_api_xyx' : 'gHud*3n29(2#n1u!'
+                },
+                body: JSON.stringify({
+                    'name': 'Samaritan', 'type': 'Identity'
+                })
+            })
+            .then(res => {
+                (async function handle() {
+                    await res.text().then(reslt => {
+                        console.log(reslt);
+                        document.querySelector('.head').innerText = reslt;
+                    });
+                })();  
+            });
         </script>
     </body>
 </html>
