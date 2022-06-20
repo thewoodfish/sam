@@ -5,8 +5,9 @@ const app = express();
 const port = 3000;
 
 // substrate client imports
-const { ApiPromise } = require('@polkadot/api');
-const { WsProvider } = require('@polkadot/api');
+const { ApiPromise, WsProvider } = require('@polkadot/api');
+const { Keyring } = require('@polkadot/keyring');
+const { mnemonicGenerate } = require('@polkadot/util-crypto');
 
 // semi-config
 app.use(express.static('public'))
@@ -35,14 +36,25 @@ async function genesisHash (res) {
     res.send(api.genesisHash.toHex());
 };
 
+async function createAccount(pname, res) {
+    const mnemonic = mnemonicGenerate();
+    const keyring = new Keyring({ type: 'sr25519', ss58Format: 2 });
+    const pair = keyring.addFromUri(mnemonic, { name: pname }, 'ed25519');
+
+    res.send(mnemonic);
+}
+
+
+// request handles
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }))
 
-app.post('/bhash', function (req, res) {
-    const name = req.body.name;
-    const type = req.body.type;
+// app.post('/bhash', function (req, res) {
+//     genesisHash(res);
+// })
 
-    genesisHash(res);
+app.post('/create_account', function (req, res) {
+    createAccount(req.body.nam, res);
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))

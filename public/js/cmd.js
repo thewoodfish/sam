@@ -1,7 +1,7 @@
-var auth = false;
+		var auth = false;	
 		var start_flag = false;
 		jQuery(function($, undefined) {
-            $('body').terminal({
+            var main = $('body').terminal({
 
 				start: function() {
 					if (start_flag) 
@@ -9,31 +9,53 @@ var auth = false;
 
 					start_flag = true;
 
-					this.push(function(state) {
-						if (state) {
-							if (state == 'y') {
-								this.echo('Please input your seed phrase for identification.');
+					this.push(function(name) {
+						if (name) {
+							this.echo(`Welcome ${name}!`);
 
-								this.set_mask('*').read('Seed: ').then(
-									keys => this.echo("Your keys are " + keys)
-								);
-							}
-							else {
-								// connect to chain cand create keypair
-								this.echo('Creating a new Samaritan on chain for you...');
-								this.echo('You have 30 seconds to copy your keys.');
+							this.push(function(state) {
+								if (state) {
+									if (state == 'y') {
+										this.echo('Please input your seed phrase for identification.');
 
-								this.pause();
-								
-								this.echo('Your keys are: [[bg;green;]django police zebra coffee arm polite flight lobby destroy candle monopoly pattern]');
-								this.pause();
-									setTimeout(() => {
-										this.update(-1, "Your keys are: [[b;green;]**************************************************************************************]").resume().pop();
-									}, 30000);
-							}
+										this.set_mask('*').read('Seed: ').then(
+											keys => this.echo("Your keys are " + keys)
+										);
+									}
+									else {
+										// connect to chain cand create keypair
+										this.echo('Creating a new Samaritan for you...');
+
+										fetch ("/create_account", {
+											method: 'post',
+											headers: {
+												'Content-Type': 'application/json'
+											},
+											body: JSON.stringify({
+												'name': name
+											})
+										})
+										.then(res => {
+											(async function handle() {
+												await res.text().then(seed => {
+													main.echo('You have 30 seconds to copy your keys.');
+													main.echo(`Your keys are: [[bg;green;]${seed}]`);
+
+													main.pause();
+													setTimeout(() => {
+														main.update(-1, "Your keys are: [[b;green;]**************************************************************************************]").resume().pop();
+													}, 30000);
+												});
+											})();  
+										});
+									}
+								}
+							}, {
+								prompt: 'Do you have a Samaritan already (y/n): '
+							});
 						}
 					}, {
-						prompt: 'Do you have a Samaritan already?: '
+						prompt: 'What is your pseudo-name: '
 					});
 				},
 
