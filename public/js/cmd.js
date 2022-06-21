@@ -23,30 +23,47 @@
 										);
 									}
 									else {
-										// connect to chain cand create keypair
-										this.echo('Creating a new Samaritan for you...');
+										var password;
+										var flag = false;
 
-										fetch ("/create_account", {
-											method: 'post',
-											headers: {
-												'Content-Type': 'application/json'
-											},
-											body: JSON.stringify({
-												'name': name
-											})
-										})
-										.then(res => {
-											(async function handle() {
-												await res.text().then(seed => {
-													main.echo('You have 30 seconds to copy your keys.');
-													main.echo(`Your keys are: [[bg;green;]${seed}]`);
+										this.set_mask('*').push(function(string) {
+											password = string;
+												
+											if (password) {
 
-													main.pause();
-													setTimeout(() => {
-														main.update(-1, "Your keys are: [[b;green;]**************************************************************************************]").resume().pop();
-													}, 30000);
+												// connect to chain cand create keypair
+												this.echo('Creating a new Samaritan for you...');
+												this.pause();
+												fetch ("/create_account", {
+													method: 'post',
+													headers: {
+														'Content-Type': 'application/json'
+													},
+													body: JSON.stringify({
+														'name': name,
+														'password': password
+													})
+												})
+												.then(res => {
+													(async function handle() {
+														await res.text().then(seed => {
+															main.resume();
+															main.echo('You have 30 seconds to copy your keys.');
+															main.echo(`Your keys are: [[bg;green;]${seed}]`);
+															
+															main.pause();
+															setTimeout(() => {
+																main.update(-1, "Your keys are: [[b;green;]**************************************************************************************]").resume();
+																flag = true;
+																main.pop();
+															}, 30000);
+														});
+													})();  
 												});
-											})();  
+											}
+
+										}, {
+											prompt: 'Please enter a password: '
 										});
 									}
 								}
@@ -64,6 +81,13 @@
 						this.exec('start', true);
 
 				},
+
+				init: function() {
+					if (!start_flag) this.exec('start', true);
+
+					this.echo("Youre very welcome!");
+					this.echo("What would you love to do");
+				}
 
 			}, {
                 greetings: function () {

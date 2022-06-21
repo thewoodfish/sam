@@ -26,6 +26,8 @@
   },
   "homepage": "https://github.com/thewoodfish/sam#readme",
   "dependencies": {
+    "@polkadot/ui-keyring": "^2.5.1",
+    "@polkadot/ui-settings": "^2.5.1",
     "ejs": "^3.1.8",
     "express": "^4.18.1"
   },

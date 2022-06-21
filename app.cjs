@@ -6,8 +6,10 @@ const port = 3000;
 
 // substrate client imports
 const { ApiPromise, WsProvider } = require('@polkadot/api');
-const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
+const { keyring } = require('@polkadot/ui-keyring');
+const { cryptoWaitReady } = require('@polkadot/util-crypto');
+const { u8aToHex }= require('@polkadot/util');
 
 // semi-config
 app.use(express.static('public'))
@@ -36,25 +38,36 @@ async function genesisHash (res) {
     res.send(api.genesisHash.toHex());
 };
 
-async function createAccount(pname, res) {
-    const mnemonic = mnemonicGenerate();
-    const keyring = new Keyring({ type: 'sr25519', ss58Format: 2 });
-    const pair = keyring.addFromUri(mnemonic, { name: pname }, 'ed25519');
+async function createAccount(body, res) {
 
-    res.send(mnemonic);
+    await ApiPromise.create({ provider: wsProvider }).then(() => {
+
+        cryptoWaitReady().then(() => {
+            // load all available addresses and accounts
+            keyring.loadAll({ ss58Format: 42, type: 'sr25519' });
+
+            const mnemonic = mnemonicGenerate();
+            const { pair, json } = keyring.addUri(mnemonic, body.password, { name: body.name, created: Date.now() });
+
+            res.send(mnemonic);
+        });
+    });
 }
-
 
 // request handles
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }))
+ 
+app.post('/bhash', function (req, res) {
+    const accounts = keyring.getAccounts();
 
-// app.post('/bhash', function (req, res) {
-//     genesisHash(res);
-// })
+    accounts.forEach(({ address, meta, publicKey }) =>
+    console.log(address, JSON.stringify(meta), u8aToHex(publicKey))
+    );
+})
 
 app.post('/create_account', function (req, res) {
-    createAccount(req.body.nam, res);
+    createAccount(req.body, res);
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))
