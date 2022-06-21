@@ -11,7 +11,7 @@ When there's a web MVP, then we can move to Samaritan proper.
 
 ### The basic idea remains
 A samaritan is a digital state of an individual that is very decentralized and 100% owned and access-controlled by the owner. A samaritan can "possess" 
-devices with its state and then programs can access that data, in a well defined infrastructure. 
+devices with its state and then allow programs can access that data, in a well defined infrastructure. 
 Ofcourse, there's more to it...
 
 
