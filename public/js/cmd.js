@@ -1,35 +1,72 @@
 		var auth = false;	
 		var start_flag = false;
+		var pseudo_name;
+
+		var check_for_reset = (main, str) => {
+			var flag = false;
+			if (str == 'reset') {
+				main.reset();
+				flag = true;
+			}
+
+			return flag;
+		}
+
 		jQuery(function($, undefined) {
             var main = $('body').terminal({
 
 				start: function() {
-					if (start_flag) 
-						this.reset();
+					if (start_flag && pseudo_name) {
+						this.error(`Samaritan state with pseudo_name "${pseudo_name}" already loaded`);
+						return;
+					}
 
 					start_flag = true;
 
 					this.push(function(name) {
 						if (name) {
-							this.echo(`Welcome ${name}!`);
+							if (!check_for_reset(main, name))
+								this.echo(`Welcome ${name}!`);
 
 							this.push(function(state) {
 								if (state) {
-									if (state == 'y') {
-										this.echo('Please input your seed phrase for identification.');
+									check_for_reset(main, state);
 
-										this.set_mask('*').read('Seed: ').then(
-											keys => this.echo("Your keys are " + keys)
-										);
+									if (state == 'y') {
+										this.echo('Please input your seed phrase.');
+
+										this.set_mask('*').read('Seed: ').then(keys => {
+											// send keys to server to chain for authentication (very insecure!)
+											this.echo("Connecting to chain to authenticate you...");
+											this.pause();
+											
+											fetch ("/auth_account", {
+												method: 'post',
+												headers: {
+													'Content-Type': 'application/json'
+												},
+												body: JSON.stringify({
+													'keys': keys
+												})
+											})
+											.then(res => {
+												(async function handle() {
+													await res.text().then(seed => {
+
+													});
+												})();  
+											});
+										});
 									}
-									else {
+									else if (state == 'n') {
 										var password;
-										var flag = false;
 
 										this.set_mask('*').push(function(string) {
 											password = string;
 												
 											if (password) {
+
+												check_for_reset(main, password);
 
 												// connect to chain cand create keypair
 												this.echo('Creating a new Samaritan for you...');
@@ -50,44 +87,54 @@
 															main.resume();
 															main.echo('You have 30 seconds to copy your keys.');
 															main.echo(`Your keys are: [[bg;green;]${seed}]`);
+
+															pseudo_name = name;
 															
 															main.pause();
 															setTimeout(() => {
 																main.update(-1, "Your keys are: [[b;green;]**************************************************************************************]").resume();
-																flag = true;
 																main.pop();
-															}, 30000);
+															}, 3000);
 														});
 													})();  
 												});
 											}
-
 										}, {
-											prompt: 'Please enter a password: '
+											prompt: 'Please enter your new password: ',
+											onPop: function(before, after) {
+												passwd.pop();
+											},
+											name: "passwd", 
 										});
 									}
 								}
 							}, {
-								prompt: 'Do you have a Samaritan already (y/n): '
+								prompt: 'Do you have a Samaritan already (y/n): ',
+								onPop: function(before, after) {
+									this.pop();
+								},
 							});
 						}
 					}, {
-						prompt: 'What is your pseudo-name: '
+						prompt: 'What is your pseudo-name: ',
+						onPop: function(before, after) {
+							this.pop();
+							this.set_prompt(`[[b;green;]{${pseudo_name ? pseudo_name : ""}}>>>]`);
+						},
 					});
 				},
 
-				add: function() {
-					if (!start_flag) 
-						this.exec('start', true);
-
+				help: function() {
+					this.echo("[[b;green;]Samaritan 0.1.0] (c) 2022");	
+					this.echo("The following commands are currently supported by Samaritan: ");
+					this.echo("[[b;green;]start:] First command to run to load Samaritan state into the terminal. You can also create a new Samaritan if you don't have one already. After importing state, you can't call start again until reload of terminal & server.");
+					this.echo("[[b;green;]reset:] Reset terminal");
+					this.echo("[[b;green;]help:] Show commands currently supported by Samaritan and their brief description.");
 				},
 
-				init: function() {
-					if (!start_flag) this.exec('start', true);
-
-					this.echo("Youre very welcome!");
-					this.echo("What would you love to do");
-				}
+				reset: function() {
+					this.reset();
+				},
 
 			}, {
                 greetings: function () {

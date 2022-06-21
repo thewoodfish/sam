@@ -7,3 +7,4 @@ const api = await ApiPromise.create({ provider: wsProvider });
 
 // Do something
 console.log(api.genesisHash.toHex());
+

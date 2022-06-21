@@ -2,7 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser')
 const app = express();
-const port = 3000;
+const port = 3002;
 
 // substrate client imports
 const { ApiPromise, WsProvider } = require('@polkadot/api');
@@ -66,8 +66,14 @@ app.post('/bhash', function (req, res) {
     );
 })
 
+// add account
 app.post('/create_account', function (req, res) {
     createAccount(req.body, res);
+})
+
+// authenticate account
+app.post('/auth_account', function (req, res) {
+    cauthAccount(req.body.keys, res);
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))
