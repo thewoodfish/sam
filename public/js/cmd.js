@@ -17,7 +17,7 @@
 
 				start: function() {
 					if (start_flag && pseudo_name) {
-						this.error(`Samaritan state with pseudo_name "${pseudo_name}" already loaded`);
+						this.error(`Samaritan state with pseudo-name "${pseudo_name}" already loaded`);
 						return;
 					}
 
@@ -36,25 +36,42 @@
 										this.echo('Please input your seed phrase.');
 
 										this.set_mask('*').read('Seed: ').then(keys => {
-											// send keys to server to chain for authentication (very insecure!)
-											this.echo("Connecting to chain to authenticate you...");
-											this.pause();
-											
-											fetch ("/auth_account", {
-												method: 'post',
-												headers: {
-													'Content-Type': 'application/json'
-												},
-												body: JSON.stringify({
-													'keys': keys
-												})
-											})
-											.then(res => {
-												(async function handle() {
-													await res.text().then(seed => {
+											check_for_reset(main, keys);
 
-													});
-												})();  
+											this.set_mask('*').read('Enter your password: ').then(password => {
+												check_for_reset(main, password);
+
+												// send keys to server to chain for authentication (very insecure!)
+												this.echo("Connecting to chain to authenticate you...");
+												this.pause();
+												
+												fetch ("/auth_account", {
+													method: 'post',
+													headers: {
+														'Content-Type': 'application/json'
+													},
+													body: JSON.stringify({
+														'keys': keys,
+														'password': password,
+														'pseudo': name
+													})
+												})
+												.then(res => {
+													(async function handle() {
+														await res.text().then(bool => {
+															main.resume();
+
+															if (bool == "true") {
+																pseudo_name = name;
+																main.echo("Authentication successful!");
+																main.echo(`Samaritan ${pseudo_name} successfully imported`);
+															} else 
+																main.error("Could not find Samaritan with details provided!");
+
+															main.set_mask(false);
+														});
+													})();  
+												});
 											});
 										});
 									}
@@ -69,7 +86,7 @@
 												check_for_reset(main, password);
 
 												// connect to chain cand create keypair
-												this.echo('Creating a new Samaritan for you...');
+												this.echo('Creating your Samaritan...');
 												this.pause();
 												fetch ("/create_account", {
 													method: 'post',
@@ -86,15 +103,16 @@
 														await res.text().then(seed => {
 															main.resume();
 															main.echo('You have 30 seconds to copy your keys.');
-															main.echo(`Your keys are: [[bg;green;]${seed}]`);
+															main.echo(`Your Samaritan keys are: [[bg;green;]${seed}]`);
 
 															pseudo_name = name;
 															
 															main.pause();
 															setTimeout(() => {
-																main.update(-1, "Your keys are: [[b;green;]**************************************************************************************]").resume();
+																main.update(-1, "Your Samaritan keys are: [[b;green;]**************************************************************************************]").resume();
+																main.echo(`Samaritan ${pseudo_name} successfully imported`);
 																main.pop();
-															}, 3000);
+															}, 30000);
 														});
 													})();  
 												});
@@ -125,7 +143,7 @@
 				},
 
 				help: function() {
-					this.echo("[[b;green;]Samaritan 0.1.0] (c) 2022");	
+					this.echo("[[b;green;]Samaritan 0.1.0. A digital Identity Solution (c) 2022]");	
 					this.echo("The following commands are currently supported by Samaritan: ");
 					this.echo("[[b;green;]start:] First command to run to load Samaritan state into the terminal. You can also create a new Samaritan if you don't have one already. After importing state, you can't call start again until reload of terminal & server.");
 					this.echo("[[b;green;]reset:] Reset terminal");
