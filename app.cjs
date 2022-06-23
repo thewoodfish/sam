@@ -12,6 +12,9 @@ const { keyring } = require('@polkadot/ui-keyring');
 const { cryptoWaitReady } = require('@polkadot/util-crypto');
 const { u8aToHex } = require('@polkadot/util');
 
+// utility functions
+const util = require("./utility.cjs")  
+
 // semi-config
 app.use(express.static('public'))
 app.use('/css', express.static(__dirname + 'public/css'))
@@ -31,10 +34,10 @@ app.get('/index', (req, res) => {
     res.render('index')
 })
 
+// global variables
 const wsProvider = new WsProvider('ws://127.0.0.1:9944');
 
 cryptoWaitReady().then(() => {
-    const exist = false;
     // load all available addresses and accounts
     keyring.loadAll({ ss58Format: 42, type: 'sr25519' });
 });
@@ -45,40 +48,60 @@ async function genesisHash (res) {
     res.send(api.genesisHash.toHex());
 };
 
-async function createAccount(body, res) {
-    await ApiPromise.create({ provider: wsProvider }).then(() => {
+async function createAccount(req, res) {
+    const api = await ApiPromise.create({ provider: wsProvider }).then(() => {
         cryptoWaitReady().then(() => {
-            // load all available addresses and accounts
-
             const mnemonic = mnemonicGenerate();
-            const { pair, json } = keyring.addUri(mnemonic, body.password, { name: body.name, created: Date.now() });
-
-            const accounts = keyring.getAccounts();
-
-            accounts.forEach(({ address, meta, publicKey }) =>
-                console.log(address, JSON.stringify(meta), u8aToHex(publicKey))
-            );
+            const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
             res.send(mnemonic);
+
+        });
+
+        // create json file for user and commit to IPFS
+        
+
+        (async function() {
+            // get IP address
+            let ip = util.getClientAddress(req);
+
+            // record creation and sign-in onchain
+            const txHash = await api.tx.samaritan
+                .signIn(ip)
+                .signAndSend(pair.address);
+
+            console.log(txHash);
         });
     });
 }
 
-async function authAccount(body, res) {
-    await ApiPromise.create({ provider: wsProvider }).then(() => {
+async function authAccount(req, res) {
+    const api = await ApiPromise.create({ provider: wsProvider }).then(() => {
         cryptoWaitReady().then(() => {
             var exist = false;
-            const pair = keyring.createFromUri(body.keys, body.password);
+            const pair = keyring.createFromUri(req.body.keys, req.body.password);
             const accounts = keyring.getAccounts();
 
             accounts.forEach(({ address, meta, publicKey }) => {
                 // search and compare for equality
-                if (pair.address === address && meta.name === body.pseudo) 
+                if (pair.address === address && meta.name === req.body.pseudo) 
                     exist = true;
             });
-
-            res.send(exist);
         });
+
+        if (exist) {
+            // get IP address
+            let ip = util.getClientAddress(req);
+
+            (async function() {
+                // record sign-in onchain
+                const _txHash = api.tx.samaritan
+                    .signIn(ip)
+                    .signAndSend(pair.address);
+            });
+        }
+
+        res.send(exist);
     });
 }
 
@@ -88,34 +111,17 @@ app.use(bodyParser.urlencoded({ extended: false }))
  
 // test function
 app.post('/bhash', function (req, res) {
-
-    cryptoWaitReady().then(() => {
-        // load all available addresses and accounts
-        keyring.loadAll({ ss58Format: 42, type: 'sr25519' });
-
-
-        const accounts = keyring.getAccounts();
-
-        accounts.forEach(({ address, meta, publicKey }) =>
-            console.log(address, JSON.stringify(meta), u8aToHex(publicKey))
-        );
-
-        const mnemonic = "excite hungry layer civil bachelor illness pole coffee captain vivid uncover winter";
-        const pair = keyring.createFromUri(mnemonic, "woodfish");
-
-        console.log(pair.address);
-        console.log(mnemonic);
-    })
+    res.send(`IP is ${util.getClientAddress(req)}`);
 })
 
 // add account
 app.post('/create_account', function (req, res) {
-    createAccount(req.body, res);
+    createAccount(req, res);
 })
 
 // authenticate account
 app.post('/auth_account', function (req, res) {
-    authAccount(req.body, res);
+    authAccount(req, res);
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))
