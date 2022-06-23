@@ -1,6 +1,6 @@
 		var auth = false;	
 		var start_flag = false;
-		var pseudo_name;
+		var pseudo_name = "";
 
 		var check_for_reset = (main, str) => {
 			var flag = false;
@@ -82,7 +82,6 @@
 											password = string;
 												
 											if (password) {
-
 												check_for_reset(main, password);
 
 												// connect to chain cand create keypair
@@ -148,11 +147,24 @@
 					this.echo("[[b;green;]start:] First command to run to load Samaritan state into the terminal. You can also create a new Samaritan if you don't have one already. After importing state, you can't call start again until reload of terminal & server.");
 					this.echo("[[b;green;]reset:] Reset terminal");
 					this.echo("[[b;green;]help:] Show commands currently supported by Samaritan and their brief description.");
+					this.echo("[[b;green;]info {param}:] Get information about Samaritan. {param} can be one of many commands.\
+						\n 1. [[b;green;]`personal`:] Load users personal details.");
+
 				},
 
 				reset: function() {
 					this.reset();
 				},
+
+				info: function(command) {
+					// get personal info
+					switch (command) {
+						case "personal": {
+							this.echo("Retrieving your personal details from IPFS...");
+							
+						}
+					}
+				}
 
 			}, {
                 greetings: function () {
