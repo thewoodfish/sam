@@ -59,6 +59,7 @@ async function createAccount(req, res) {
         });
 
         // create json file for user and commit to IPFS
+        util.createProfile(pair.address);
         
 
         (async function() {
