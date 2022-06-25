@@ -27,12 +27,19 @@ let createProfile = (address) => {
     };
 
     json = JSON.stringify(json);
-    fs.writeFile('./profile.json', json, (err) => {
+    fs.writeFile('profile.json', json, (err) => {
         if (!err) {
             console.log('done');
         }
     });
 }
+
+// ipfs-http-cleint
+// "exports": {
+//     ".": {
+//       "import": "./src/index.js"
+//     }
+//   },
 
 
 module.exports = { getClientAddress, createProfile };

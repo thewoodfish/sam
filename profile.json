@@ -1,1 +1,10 @@
-{"name":"Jack Sparrow","age":26,"sex":"M","d-o-b":"12/9/01","religion":"Christianity","address":"Boston, Massachussets","telephone":["0192893838021","0127938291282"],"email":["jacksparrow@gmail.com","jsparrow23@gmail.com"]}
+{
+    "name":"",
+    "age": "",
+    "sex": "",
+    "d-o-b": "",
+    "religion": "",
+    "address": "",
+    "telephone": [],
+    "email":[]
+}
