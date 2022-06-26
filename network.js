@@ -8,14 +8,15 @@ async function constructHeader(pair) {
     return Buffer.from(`sub-${pair.address}:${sigHex}`).toString('base64');
 }
 
-export async function uploadToIPFS(pair, path) {
+export async function uploadToIPFS(path) {
     const ipfs = await IPFS.create();
     const { cid } = await ipfs.add(path)
     console.info(cid)
 
-    if (cid) {
+    if (cid) 
         console.log(cid.toV0().toString());
-    } else {
+    else 
         throw new Error('IPFS add failed, please try again.');
-    }
+
+    return cid;
 }

@@ -14,6 +14,7 @@ const express = require('express');
 const bodyParser = require('body-parser')
 const app = express();
 const port = 3002;
+const crypto = require('crypto');
 
 // substrate client imports
 const { ApiPromise, WsProvider } = require('@polkadot/api');
@@ -66,23 +67,33 @@ async function createAccount(req, res) {
             const mnemonic = mnemonicGenerate();
             const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
+            // create json file for user and commit to IPFS
+            util.createProfile(pair.address);
+
+            // commit to IPFS
+            const cid = net.uploadToIPFS("./profile.json");
+
+            // record new CID onchain
+            (async function() {
+                // get IP address
+                let ip = util.getClientAddress(req);
+
+                const txs = [
+                    api.tx.samaritan.signIn(ip),
+                    api.tx.samaritan.fileUpload(cid)
+                ];
+                
+                // construct the batch and send the transactions
+                api.tx.utility
+                    .batch(txs)
+                    .signAndSend(pair.address, ({ status }) => {
+                    if (status.isInBlock) {
+                        console.log(`included in ${status.asInBlock}`);
+                    }
+                });
+            });
+
             res.send(mnemonic);
-
-        });
-
-        // create json file for user and commit to IPFS
-        util.createProfile(pair.address);
-
-        (async function() {
-            // get IP address
-            let ip = util.getClientAddress(req);
-
-            // record creation and sign-in onchain
-            const txHash = await api.tx.samaritan
-                .signIn(ip)
-                .signAndSend(pair.address);
-
-            console.log(txHash);
         });
     });
 }
@@ -110,7 +121,6 @@ async function authAccount(req, res) {
                 const _txHash = api.tx.samaritan
                     .signIn(ip)
                     .signAndSend(pair.address);
-
             });
         }
 
@@ -125,11 +135,9 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // test function
 app.post('/bhash', function (req, res) {
     // res.send(`IP is ${util.getClientAddress(req)}`);
-    const mnemonic = mnemonicGenerate();
-    const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
-    net.uploadToIPFS(pair, "./profile.json");
-
-
+    // const mnemonic = mnemonicGenerate();
+    // const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
+    // net.uploadToIPFS(pair, "./profile.json");
 })
 
 // add account

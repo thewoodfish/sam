@@ -1,4 +1,5 @@
 const fs = require('fs');
+const crypto = require('crypto');
 
 
 // Get client IP address from request object ----------------------
@@ -10,36 +11,49 @@ let getClientAddress = (req)  => {
 let createProfile = (address) => {
     let json =  {
         "addr": address,
-        "name": "Jack Sparrow",
-        "age": 26,
-        "sex": "M",
-        "d-o-b": "12/9/01",
-        "religion": "Christianity",
-        "address": "Boston, Massachussets",
-        "telephone": [
-            "0192893838021",
-            "0127938291282"
-        ],
-        "email": [
-            "jacksparrow@gmail.com",
-            "jsparrow23@gmail.com"
-        ],
+        "name": "",
+        "age": "",
+        "sex": "",
+        "d-o-b": "",
+        "religion": "",
+        "address": "",
+        "telephone": [],
+        "email": [],
     };
 
     json = JSON.stringify(json);
-    fs.writeFile('profile.json', json, (err) => {
+
+    // encrypt file
+    const initVector = crypto.randomBytes(16);
+    const algorithm = "aes-256-cbc"; 
+
+    json = JSON.stringify(json);
+    const message = json;
+
+    const securitykey = crypto.randomBytes(32);
+    const cipher = crypto.createCipheriv(algorithm, securitykey, initVector);
+
+    let encryptedData = cipher.update(message, "utf-8", "hex");
+    encryptedData += cipher.final("hex");
+
+    // we're putting the key into the file
+    let data = encryptedData.substring(0, 24) + initVector + encryptedData.substring(25);
+    data = data + securitykey;
+
+    let js_data = {
+        "data": data
+    };    
+
+    js_data = JSON.stringify(js_data);
+
+    fs.writeFile('profile.json', js_data, (err) => {
         if (!err) {
             console.log('done');
         }
     });
-}
 
-// ipfs-http-cleint
-// "exports": {
-//     ".": {
-//       "import": "./src/index.js"
-//     }
-//   },
+   
+}
 
 
 module.exports = { getClientAddress, createProfile };
