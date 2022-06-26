@@ -7,7 +7,6 @@ import {fileURLToPath} from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 
-// 👇️ "/home/john/Desktop/javascript"
 const __dirname = path.dirname(__filename);
 
 const express = require('express');
@@ -67,31 +66,34 @@ async function createAccount(req, res) {
             const mnemonic = mnemonicGenerate();
             const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
-            // create json file for user and commit to IPFS
-            util.createProfile(pair.address);
-
-            // commit to IPFS
-            const cid = net.uploadToIPFS("./profile.json");
-
             // record new CID onchain
             (async function() {
-                // get IP address
-                let ip = util.getClientAddress(req);
 
-                const txs = [
-                    api.tx.samaritan.signIn(ip),
-                    api.tx.samaritan.fileUpload(cid)
-                ];
-                
-                // construct the batch and send the transactions
-                api.tx.utility
-                    .batch(txs)
-                    .signAndSend(pair.address, ({ status }) => {
-                    if (status.isInBlock) {
-                        console.log(`included in ${status.asInBlock}`);
-                    }
+                // create json file for user and commit to IPFS
+                util.createProfile(pair.address);
+
+                // commit to IPFS
+                await net.uploadToIPFS("./profile.json").then(cid => {;
+                    
+                    console.log("The CID is  " + cid);
+                    // get IP address
+                    let ip = util.getClientAddress(req);
+
+                    const txs = [
+                        api.tx.samaritan.signIn(ip),
+                        api.tx.samaritan.fileUpload(cid)
+                    ];
+                    
+                    // construct the batch and send the transactions
+                    api.tx.utility
+                        .batch(txs)
+                        .signAndSend(pair.address, ({ status }) => {
+                        if (status.isInBlock) {
+                            console.log(`included in ${status.asInBlock}`);
+                        }
+                    });
                 });
-            });
+            }());
 
             res.send(mnemonic);
         });
@@ -121,7 +123,7 @@ async function authAccount(req, res) {
                 const _txHash = api.tx.samaritan
                     .signIn(ip)
                     .signAndSend(pair.address);
-            });
+            }());
         }
 
         res.send(exist);
@@ -137,7 +139,11 @@ app.post('/bhash', function (req, res) {
     // res.send(`IP is ${util.getClientAddress(req)}`);
     // const mnemonic = mnemonicGenerate();
     // const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
-    // net.uploadToIPFS(pair, "./profile.json");
+    net.uploadToIPFS("./profile.json").then(cid => {;
+                    
+        console.log("The CID is  " + cid);
+        // get IP address
+    });
 })
 
 // add account

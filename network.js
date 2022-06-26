@@ -10,8 +10,10 @@ async function constructHeader(pair) {
 
 export async function uploadToIPFS(path) {
     const ipfs = await IPFS.create();
-    const { cid } = await ipfs.add(path)
-    console.info(cid)
+    const { cid } = await ipfs.add(path);
+
+    console.log("dikbjdns");
+    console.info(cid);
 
     if (cid) 
         console.log(cid.toV0().toString());
