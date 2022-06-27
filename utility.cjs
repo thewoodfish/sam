@@ -15,7 +15,7 @@ let createProfile = (address) => {
         "name": "",
         "age": "",
         "sex": "",
-        "d-o-b": "",
+        "d_o_b": "",
         "religion": "",
         "address": "",
         "telephone": [],

@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const express = require('express');
 const bodyParser = require('body-parser')
 const app = express();
-const port = 3002;
+const port = 3005;
 const crypto = require('crypto');
 
 // substrate client imports
@@ -48,6 +48,7 @@ app.get('/index', (req, res) => {
 
 // global variables
 const wsProvider = new WsProvider('ws://127.0.0.1:9944');
+const api = await ApiPromise.create({ provider: wsProvider });
 
 cryptoWaitReady().then(() => {
     // load all available addresses and accounts
@@ -61,42 +62,35 @@ async function genesisHash (res) {
 };
 
 async function createAccount(req, res) {
-    const api = await ApiPromise.create({ provider: wsProvider }).then(() => {
-        cryptoWaitReady().then(() => {
+    cryptoWaitReady().then(() => {
+        // record new CID onchain
+        (async function() {
             const mnemonic = mnemonicGenerate();
             const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
-            // record new CID onchain
-            (async function() {
+            // create json file for user and commit to IPFS
+            const prof = util.createProfile(pair.address);
 
-                // create json file for user and commit to IPFS
-                const prof = util.createProfile(pair.address);
+            console.log(prof);
 
-                // commit to IPFS
-                await net.uploadToIPFS("./profile.json").then(cid => {;
-                    
-                    console.log("The CID is  " + cid);
-                    // get IP address
-                    let ip = util.getClientAddress(req);
+            // get IP address
+            let ip = util.getClientAddress(req);
 
-                    const txs = [
-                        api.tx.samaritan.signIn(ip),
-                        api.tx.samaritan.changeDetail(req.body.name, cid)
-                    ];
-                    
-                    // construct the batch and send the transactions
-                    api.tx.utility
-                        .batch(txs)
-                        .signAndSend(pair.address, ({ status }) => {
-                        if (status.isInBlock) {
-                            console.log(`included in ${status.asInBlock}`);
-                        }
-                    });
+            // const _txHash = api.tx.samaritan
+            //     .signIn(ip)
+            //     .signAndSend(pair.address);
 
-                    sendProfileData(prof, mnemonic, cid, res);
-                });
-            }());
-        });
+            // commit to IPFS
+            await net.uploadToIPFS("./profile.json").then(cid => {
+                console.log("The CID is  " + cid);
+
+                // const _txHash1 = api.tx.samaritan
+                //     .changeDetail(req.body.name, cid)
+                //     .signAndSend(pair.address);
+                
+                sendProfileData(prof, mnemonic, cid.toString(), res);
+            });
+        }());
     });
 }
 

@@ -1,6 +1,10 @@
 		var auth = false;	
 		var start_flag = false;
 		var pseudo_name = "";
+		var sam = {
+			cid: "",
+			data: {}
+		};
 
 		var check_for_reset = (main, str) => {
 			var flag = false;
@@ -99,7 +103,13 @@
 												})
 												.then(res => {
 													(async function handle() {
-														await res.text().then(seed => {
+														await res.json().then(res => {
+															var seed = res.seed;
+															
+															// save details locally
+															sam.data = JSON.parse(res.data);
+															sam.cid = res.cid;
+
 															main.resume();
 															main.echo('You have 30 seconds to copy your keys.');
 															main.echo(`Your Samaritan keys are: [[bg;green;]${seed}]`);
@@ -157,11 +167,25 @@
 				},
 
 				info: function(command) {
+					// make sure a Samaritan is loaded already
+					if (!sam.cid) {
+						this.error("No Samaritan state loaded!");
+						return;
+					}
+					
 					// get personal info
 					switch (command) {
 						case "personal": {
-							this.echo("Retrieving your personal details from IPFS...");
-							
+							this.echo(`Pseudo-name: ${pseudo_name}`);
+							this.echo(`IPFS CID: ${sam.cid}`);
+							this.echo(`Substrate Address(Public): ${sam.data.addr}`);
+							this.echo(`Name: ${sam.data.name}`);
+							this.echo(`Age: ${sam.data.age}`);
+							this.echo(`Sex: ${sam.data.sex}`);
+							this.echo(`D-o-B: ${sam.data.d_o_b}`);
+							this.echo(`Religion: ${sam.data.religion}`);
+							this.echo(`Telephone: ${sam.data.telephone.map( (e) => (e) ).join(' ')}`);
+							this.echo(`Email: ${sam.data.email.map( (e) => (e) ).join(' ')}`);
 						}
 					}
 				}
