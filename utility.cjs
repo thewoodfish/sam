@@ -8,6 +8,7 @@ let getClientAddress = (req)  => {
     || req.connection.remoteAddress;
 };
 
+// create json file and encrypt the users basic data in
 let createProfile = (address) => {
     let json =  {
         "addr": address,
@@ -26,8 +27,6 @@ let createProfile = (address) => {
     // encrypt file
     const initVector = crypto.randomBytes(16);
     const algorithm = "aes-256-cbc"; 
-
-    json = JSON.stringify(json);
     const message = json;
 
     const securitykey = crypto.randomBytes(32);
@@ -52,7 +51,8 @@ let createProfile = (address) => {
         }
     });
 
-   
+    // return JSON object
+    return json;
 }
 
 

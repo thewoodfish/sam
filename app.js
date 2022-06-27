@@ -70,7 +70,7 @@ async function createAccount(req, res) {
             (async function() {
 
                 // create json file for user and commit to IPFS
-                util.createProfile(pair.address);
+                const prof = util.createProfile(pair.address);
 
                 // commit to IPFS
                 await net.uploadToIPFS("./profile.json").then(cid => {;
@@ -81,7 +81,7 @@ async function createAccount(req, res) {
 
                     const txs = [
                         api.tx.samaritan.signIn(ip),
-                        api.tx.samaritan.fileUpload(cid)
+                        api.tx.samaritan.changeDetail(req.body.name, cid)
                     ];
                     
                     // construct the batch and send the transactions
@@ -92,12 +92,23 @@ async function createAccount(req, res) {
                             console.log(`included in ${status.asInBlock}`);
                         }
                     });
+
+                    sendProfileData(prof, mnemonic, cid, res);
                 });
             }());
-
-            res.send(mnemonic);
         });
     });
+}
+
+function sendProfileData(profile, mnemonic, cid, res) {
+    let json = {
+        data: profile,
+        seed: mnemonic,
+        cid: cid
+    };
+
+    json = JSON.stringify(json);
+    res.send(json);
 }
 
 async function authAccount(req, res) {
