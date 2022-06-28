@@ -9,7 +9,7 @@ let getClientAddress = (req)  => {
 };
 
 // create json file and encrypt the users basic data in
-let createProfile = (address) => {
+let createProfile = (seed, address) => {
     let json =  {
         "addr": address,
         "name": "",
@@ -23,37 +23,95 @@ let createProfile = (address) => {
     };
 
     json = JSON.stringify(json);
+    let js_data = {
+        "data": encryptData(json, seed.substr(0, 32))
+    };    
 
-    // encrypt file
-    const initVector = crypto.randomBytes(16);
+    // return JSON object
+    return JSON.stringify(js_data);
+}
+
+function encryptData(message, securitykey) {
+    const initVector = "0000000000000000";
     const algorithm = "aes-256-cbc"; 
-    const message = json;
 
-    const securitykey = crypto.randomBytes(32);
     const cipher = crypto.createCipheriv(algorithm, securitykey, initVector);
 
     let encryptedData = cipher.update(message, "utf-8", "hex");
     encryptedData += cipher.final("hex");
 
-    // we're putting the key into the file
-    let data = encryptedData.substring(0, 24) + initVector + encryptedData.substring(25);
-    data = data + securitykey;
+    return encryptedData;
+}
 
-    let js_data = {
-        "data": data
-    };    
+function decryptData(encryptedData, securitykey) {
+    const initVector = "0000000000000000";
+    const algorithm = "aes-256-cbc"; 
 
-    js_data = JSON.stringify(js_data);
+    const decipher = crypto.createDecipheriv(algorithm, securitykey, initVector);
 
-    fs.writeFile('profile.json', js_data, (err) => {
-        if (!err) {
-            console.log('done');
-        }
-    });
+    let decryptedData = decipher.update(encryptedData, "hex", "utf-8");
+    decryptedData += decipher.final("utf8");
+    
+    return decryptedData;
+}
 
-    // return JSON object
-    return json;
+function sendProfileData(profile, mnemonic, variable, res) {
+    let json = {
+        data: profile,
+        seed: mnemonic,
+        var: variable
+    };
+
+    json = JSON.stringify(json);
+    res.send(json);
 }
 
 
-module.exports = { getClientAddress, createProfile };
+function Utf8ArrayToStr(array) {
+
+    // adopted from:
+    //   http://www.onicos.com/staff/iz/amuse/javascript/expert/utf.txt
+
+    /* utf.js - UTF-8 <=> UTF-16 convertion
+    *
+    * Copyright (C) 1999 Masanao Izumo <iz@onicos.co.jp>
+    * Version: 1.0
+    * LastModified: Dec 25 1999
+    * This library is free.  You can redistribute it and/or modify it.
+    */
+
+    var out, i, len, c;
+    var char2, char3;
+
+    out = "";
+    len = array.length;
+    i = 0;
+    
+    while(i < len) {
+        c = array[i++];
+        switch(c >> 4)
+        { 
+            case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+                // 0xxxxxxx
+                out += String.fromCharCode(c);
+                break;
+            case 12: case 13:
+                // 110x xxxx   10xx xxxx
+                char2 = array[i++];
+                out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+                break;
+            case 14:
+                // 1110 xxxx  10xx xxxx  10xx xxxx
+                char2 = array[i++];
+                char3 = array[i++];
+                out += String.fromCharCode(((c & 0x0F) << 12) |
+                            ((char2 & 0x3F) << 6) |
+                            ((char3 & 0x3F) << 0));
+                break;
+        }
+    }
+
+    return out;
+}
+
+module.exports = { getClientAddress, createProfile, sendProfileData, Utf8ArrayToStr, decryptData };

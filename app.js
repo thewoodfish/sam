@@ -69,55 +69,42 @@ async function createAccount(req, res) {
             const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
             // create json file for user and commit to IPFS
-            const prof = util.createProfile(pair.address);
-
-            console.log(prof);
+            const prof = util.createProfile(mnemonic, pair.address);
 
             // get IP address
             let ip = util.getClientAddress(req);
 
-            // const _txHash = api.tx.samaritan
-            //     .signIn(ip)
-            //     .signAndSend(pair.address);
+            const _txHash = api.tx.samaritan
+                .signIn(ip)
+                .signAndSend(pair.address);
 
             // commit to IPFS
-            await net.uploadToIPFS("./profile.json").then(cid => {
+            await net.uploadToIPFS(prof).then(cid => {
                 console.log("The CID is  " + cid);
 
-                // const _txHash1 = api.tx.samaritan
-                //     .changeDetail(req.body.name, cid)
-                //     .signAndSend(pair.address);
+                const _txHash1 = api.tx.samaritan
+                    .changeDetail(req.body.name, cid)
+                    .signAndSend(pair.address);
                 
-                sendProfileData(prof, mnemonic, cid.toString(), res);
+                util.sendProfileData(prof, mnemonic, cid.toString(), res);
             });
         }());
     });
 }
 
-function sendProfileData(profile, mnemonic, cid, res) {
-    let json = {
-        data: profile,
-        seed: mnemonic,
-        cid: cid
-    };
-
-    json = JSON.stringify(json);
-    res.send(json);
-}
-
 async function authAccount(req, res) {
-    const api = await ApiPromise.create({ provider: wsProvider }).then(() => {
-        cryptoWaitReady().then(() => {
-            var exist = false;
-            const pair = keyring.createFromUri(req.body.keys, req.body.password);
-            const accounts = keyring.getAccounts();
+    cryptoWaitReady().then(() => {
+        var exist = false;
+        var mnemonic = req.body.keys;
+        const pair = keyring.createFromUri(mnemonic, req.body.password);
+        const accounts = keyring.getAccounts();
 
-            accounts.forEach(({ address, meta, publicKey }) => {
-                // search and compare for equality
-                if (pair.address === address && meta.name === req.body.pseudo) 
-                    exist = true;
-            });
+        accounts.forEach(({ address, meta, publicKey }) => {
+            // search and compare for equality
+            if (pair.address === address && meta.name === req.body.pseudo) 
+                exist = true;
         });
+
 
         if (exist) {
             // get IP address
@@ -128,10 +115,25 @@ async function authAccount(req, res) {
                 const _txHash = api.tx.samaritan
                     .signIn(ip)
                     .signAndSend(pair.address);
-            }());
-        }
 
-        res.send(exist);
+                // get CID from onchain storage
+                const sam = await api.query.samaritan.samPool(pair.address);
+                const cid = sam.toHuman().cid;
+
+                // get state from IPFS using users CID
+                net.getFromIPFS(cid).then(arr => {
+                    let json = util.Utf8ArrayToStr(arr);
+                    let decryptedData = util.decryptData(JSON.parse(json).data, mnemonic.substring(0, 32));
+                    let json_data = JSON.parse(decryptedData);
+
+                    util.sendProfileData(json_data, "", { boomnemonicl: exist, cid: cid }, res);
+                });
+
+            }());
+
+        } else 
+            util.sendProfileData({}, "", { bool: exist, cid: "" }, res);
+
     });
 }
 
@@ -144,11 +146,25 @@ app.post('/bhash', function (req, res) {
     // res.send(`IP is ${util.getClientAddress(req)}`);
     // const mnemonic = mnemonicGenerate();
     // const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
-    net.uploadToIPFS("./profile.json").then(cid => {;
+
+    // net.uploadToIPFS("./profile.json").then(cid => {;
                     
-        console.log("The CID is  " + cid);
-        // get IP address
-    });
+    //     console.log("The CID is  " + cid);
+    //     // get IP address
+    // });
+    (async function () {
+        const sam = await api.query.samaritan.samPool("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty");
+        let cid = sam.toHuman().cid;
+
+        net.getFromIPFS(cid).then(arr => {
+            let mnemonic = "valve start borrow magic mean multiply verb width mimic grain awesome bag";
+            let json = util.Utf8ArrayToStr(arr);
+            
+            let decryptedData = util.decryptData(JSON.parse(json).data, mnemonic.substring(0, 32));
+            console.log(decryptedData);
+        });
+
+    }());
 })
 
 // add account

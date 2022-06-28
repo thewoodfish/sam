@@ -62,7 +62,12 @@
 												})
 												.then(res => {
 													(async function handle() {
-														await res.text().then(bool => {
+														await res.json().then(res => {
+															let bool = res.var.bool;
+
+															sam.data = JSON.parse(res.data);
+															sam.cid = res.var.cid;
+															
 															main.resume();
 
 															if (bool == "true") {
@@ -108,7 +113,7 @@
 															
 															// save details locally
 															sam.data = JSON.parse(res.data);
-															sam.cid = res.cid;
+															sam.cid = res.var;
 
 															main.resume();
 															main.echo('You have 30 seconds to copy your keys.');

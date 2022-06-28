@@ -1,4 +1,15 @@
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+import path from 'path';
+import {fileURLToPath} from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import * as IPFS from "ipfs-core";
+
+const toBuffer = require('it-to-buffer');
 
 async function constructHeader(pair) {
     // Construct auth header
@@ -21,4 +32,11 @@ export async function uploadToIPFS(path) {
         throw new Error('IPFS add failed, please try again.');
 
     return cid;
+}
+
+export async function getFromIPFS(cid) {
+    const ipfs = await IPFS.create();
+    const bufferedContents = await toBuffer(ipfs.cat(cid)); // returns a Buffer
+    
+    return bufferedContents;
 }
