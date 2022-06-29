@@ -16,6 +16,17 @@
 			return flag;
 		}
 
+		var ensure_state = (main) => {
+			let exist = true;
+
+			if (!sam.cid) {
+				main.error("No Samaritan state loaded!");
+				exist = false;
+			}
+
+			return exist;
+		}
+
 		jQuery(function($, undefined) {
             var main = $('body').terminal({
 
@@ -113,7 +124,7 @@
 															
 															// save details locally
 															sam.data = JSON.parse(res.data);
-															sam.cid = res.var;
+															sam.cid = res.var.cid;
 
 															main.resume();
 															main.echo('You have 30 seconds to copy your keys.');
@@ -126,7 +137,7 @@
 																main.update(-1, "Your Samaritan keys are: [[b;green;]**************************************************************************************]").resume();
 																main.echo(`Samaritan ${pseudo_name} successfully imported`);
 																main.pop();
-															}, 30000);
+															}, 3000);
 														});
 													})();  
 												});
@@ -162,8 +173,10 @@
 					this.echo("[[b;green;]start:] First command to run to load Samaritan state into the terminal. You can also create a new Samaritan if you don't have one already. After importing state, you can't call start again until reload of terminal & server.");
 					this.echo("[[b;green;]reset:] Reset terminal");
 					this.echo("[[b;green;]help:] Show commands currently supported by Samaritan and their brief description.");
-					this.echo("[[b;green;]info {param}:] Get information about Samaritan. {param} can be one of many commands.\
+					this.echo("[[b;green;]info {param}:] Get information about Samaritan. {param} can be one of many commands:\
 						\n 1. [[b;green;]`personal`:] Load users personal details.");
+					this.echo("[[b;green;]mod {attribute} {value}:] Change the personal properties of a Samaritan. e.g mod age 27");
+					
 
 				},
 
@@ -173,25 +186,62 @@
 
 				info: function(command) {
 					// make sure a Samaritan is loaded already
-					if (!sam.cid) {
-						this.error("No Samaritan state loaded!");
-						return;
-					}
-					
-					// get personal info
-					switch (command) {
-						case "personal": {
-							this.echo(`Pseudo-name: ${pseudo_name}`);
-							this.echo(`IPFS CID: ${sam.cid}`);
-							this.echo(`Substrate Address(Public): ${sam.data.addr}`);
-							this.echo(`Name: ${sam.data.name}`);
-							this.echo(`Age: ${sam.data.age}`);
-							this.echo(`Sex: ${sam.data.sex}`);
-							this.echo(`D-o-B: ${sam.data.d_o_b}`);
-							this.echo(`Religion: ${sam.data.religion}`);
-							this.echo(`Telephone: ${sam.data.telephone.map( (e) => (e) ).join(' ')}`);
-							this.echo(`Email: ${sam.data.email.map( (e) => (e) ).join(' ')}`);
+					if (ensure_state(this)) {
+						
+						// get personal info
+						switch (command) {
+							case "personal": {
+								this.echo(`Pseudo-name: ${pseudo_name}`);
+								this.echo(`IPFS CID: ${sam.cid}`);
+								this.echo(`Substrate Address(Public): ${sam.data.addr}`);
+								this.echo(`Name: ${sam.data.name}`);
+								this.echo(`Age: ${sam.data.age}`);
+								this.echo(`Sex: ${sam.data.sex}`);
+								this.echo(`D-o-B: ${sam.data.d_o_b}`);
+								this.echo(`Religion: ${sam.data.religion}`);
+								this.echo(`Telephone: ${sam.data.telephone.map( (e) => (e) ).join(' ')}`);
+								this.echo(`Email: ${sam.data.email.map( (e) => (e) ).join(' ')}`);
+							}
 						}
+					}
+				},
+
+				mod: function(prop, value) {
+					if (ensure_state(this)) {
+						let properties = ["name", "age", "sex", "d_o_b", "religion", "telephone", "email"];
+						let mem = false;
+
+						for (var i = 0; i < properties.length; i++) 
+							if (prop == properties[i]) {
+								mem = true;
+								break;
+							}
+
+						// check if property specified is correct
+						if (!mem)
+							this.error(`Property "${prop}" not found`);
+
+						// send to server modify and commit to IPFS
+						fetch ("/mod_state", {
+							method: 'post',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								"cid": sam.cid,
+								"addr": sam.addr,
+								"name": pseudo_name,
+								'prop': prop,
+								'val': value
+							})
+						})
+						.then(res => {
+							(async function handle() {
+								await res.json().then(res => {
+
+								});
+							})();  
+						});
 					}
 				}
 

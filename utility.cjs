@@ -27,8 +27,13 @@ let createProfile = (seed, address) => {
         "data": encryptData(json, seed.substr(0, 32))
     };    
 
+    let ret = {
+        prof: JSON.stringify(js_data),
+        user_det: json
+    }
+
     // return JSON object
-    return JSON.stringify(js_data);
+    return ret;
 }
 
 function encryptData(message, securitykey) {

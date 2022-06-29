@@ -69,24 +69,24 @@ async function createAccount(req, res) {
             const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
             // create json file for user and commit to IPFS
-            const prof = util.createProfile(mnemonic, pair.address);
+            const ret  = util.createProfile(mnemonic, pair.address);
 
             // get IP address
             let ip = util.getClientAddress(req);
 
-            const _txHash = api.tx.samaritan
-                .signIn(ip)
-                .signAndSend(pair.address);
+            // const _txHash = api.tx.samaritan
+            //     .signIn(ip)
+            //     .signAndSend(pair.address);
 
             // commit to IPFS
-            await net.uploadToIPFS(prof).then(cid => {
+            await net.uploadToIPFS(ret.prof).then(cid => {
                 console.log("The CID is  " + cid);
 
-                const _txHash1 = api.tx.samaritan
-                    .changeDetail(req.body.name, cid)
-                    .signAndSend(pair.address);
+                // const _txHash1 = api.tx.samaritan
+                //     .changeDetail(req.body.name, cid)
+                //     .signAndSend(pair.address);
                 
-                util.sendProfileData(prof, mnemonic, cid.toString(), res);
+                util.sendProfileData(ret.user_det, mnemonic, { cid: cid.toString() }, res);
             });
         }());
     });
@@ -112,9 +112,9 @@ async function authAccount(req, res) {
 
             (async function() {
                 // record sign-in onchain
-                const _txHash = api.tx.samaritan
-                    .signIn(ip)
-                    .signAndSend(pair.address);
+                // const _txHash = api.tx.samaritan
+                //     .signIn(ip)
+                //     .signAndSend(pair.address);
 
                 // get CID from onchain storage
                 const sam = await api.query.samaritan.samPool(pair.address);
@@ -123,10 +123,10 @@ async function authAccount(req, res) {
                 // get state from IPFS using users CID
                 net.getFromIPFS(cid).then(arr => {
                     let json = util.Utf8ArrayToStr(arr);
-                    let decryptedData = util.decryptData(JSON.parse(json).data, mnemonic.substring(0, 32));
+                    let decryptedData = util.decryptData(JSON.parse(json).data, pair.address.substring(0, 32));
                     let json_data = JSON.parse(decryptedData);
 
-                    util.sendProfileData(json_data, "", { boomnemonicl: exist, cid: cid }, res);
+                    util.sendProfileData(json_data, "", { bool: exist, cid: cid }, res);
                 });
 
             }());
@@ -134,6 +134,40 @@ async function authAccount(req, res) {
         } else 
             util.sendProfileData({}, "", { bool: exist, cid: "" }, res);
 
+    });
+}
+
+// modify Samaritan details and return to IPFS
+async function modifySam(req, res) {
+    // get state from IPFS using users CID
+    await net.getFromIPFS(req.cid).then(arr => {
+        let json = util.Utf8ArrayToStr(arr);
+        let decryptedData = util.decryptData(JSON.parse(json).data, req.addr(0, 32));
+        let json_data = JSON.parse(decryptedData);
+
+        // modify data
+        for (var k in json_data) {
+            if (json_data.hasOwnProperty(k) && k.toString() == req.prop) {
+                json_data.k = req.val;
+                break;
+            }
+        }
+
+        console.log(json_data);
+
+        (async function() {
+            // commit to IPFS
+            await net.uploadToIPFS(json_data).then(cid => {
+                console.log("The CID is  " + cid);
+
+                // record change onchain
+                // const _txHash1 = api.tx.samaritan
+                //     .changeDetail(req.name, cid)
+                //     .signAndSend(req.addr);
+                
+                util.sendProfileData(json_data, "", { cid: cid.toString() }, res);
+            });
+        }());
     });
 }
 
@@ -175,6 +209,11 @@ app.post('/create_account', function (req, res) {
 // authenticate account
 app.post('/auth_account', function (req, res) {
     authAccount(req, res);
+})
+
+// modify Samaritan
+app.post('/mod_state', function (req, res) {
+    modifySam(req, res);
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))
