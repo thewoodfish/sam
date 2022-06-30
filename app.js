@@ -13,7 +13,17 @@ const express = require('express');
 const bodyParser = require('body-parser')
 const app = express();
 const port = 3005;
+const fs = require('fs');
 const crypto = require('crypto');
+
+// formidable form handler
+const formidable = require('formidable');
+const uploadFolder = path.join(__dirname, "public/files/");
+
+formidable.multiples = true;
+formidable.maxFileSize = 50 * 1024 * 1024; // 5MB
+formidable.uploadDir = uploadFolder;
+
 
 // substrate client imports
 const { ApiPromise, WsProvider } = require('@polkadot/api');
@@ -211,7 +221,23 @@ app.post('/mod_state', function (req, res) {
 
 // upload app
 app.post('/upload_app', function (req, res) {
-    console.log(req);
+    var form = new formidable.IncomingForm();
+    form.parse(req, function(err, fields, files) {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+
+        var oldpath = files.file.filepath;
+        var newpath = uploadFolder + fields.app_name;
+        fs.rename(oldpath, newpath, function (err) {
+            if (err) throw err;
+            res.write('File uploaded and moved!');
+            res.end();
+        });
+        
+        // beginAppUpload(fields.name, fileName);
+    });
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))

@@ -35,6 +35,11 @@
 		.submit {
 			margin: 20px;
 		}
+
+		.app_name {
+			width: 90%;
+			height: 30px;
+		}
 	</style>
 </head>
 
@@ -61,13 +66,15 @@
 			<h3>Upload an App to the Samaritan Ability Pool</h3>
 			<p>Sign your app to be validated by the network and approved into the Ability Pool for download</p>
 			<form>
+				<input type="text" placeholder="Name of app" class="app_name">
 				<hr>
 				<input type="file" class="file">
 				<hr><br>
 				<button class="submit" onclick="return false">Submit to network</button>
 			</form>
    		</div>
-		
+
+		<script src="js/cmd.js"></script>
 		<script>
 			let up = document.querySelector(".upload");
 
@@ -79,36 +86,41 @@
 					}
 
 					case "submit":  {
-						var data = new FormData();
-						data.append("app", document.querySelector(".file").value)
+						var file = document.querySelector('input[type=file]').files[0];
+						var reader = new FileReader();
 
-						// upload to server
-						fetch ("/upload_app", {
-							method: 'post',
-							headers: {
-								'Content-Type': 'multipart/form-data'
-							},
-							body: data
-						})
-						.then(res => {
-							(async function () {
-								await res.json().then(res => {
-									
-									// save details locally
-									sam.data = res.data;
-									sam.cid = res.var.cid;
+						reader.addEventListener('load', (e) => {
+							let data = new FormData();
+							const blob = new Blob([new Uint8Array(e.target.result)], { type: file.type });
 
-									main.resume();
-									main.echo("Your state has been updated!");
-								});
-							})();  
+							data.append("app_name", document.querySelector(".app_name").value)
+							data.append("file", blob);
+
+							console.log(data);
+
+							// upload to server
+							fetch ("/upload_app", {
+								method: 'post',
+								// headers: {
+								// 	'Content-Type': 'application/x-www-form-urlencoded'
+								// },
+								body: data
+							})
+							.then(res => {
+								(async function () {
+									await res.json().then(res => {
+										
+									});
+								})();  
+							});
 						});
+
+						reader.readAsArrayBuffer(file);
 					}
 				}
 			})
 		</script>
 
-	<script src="js/cmd.js"></script>
 </body>
 
 </html>

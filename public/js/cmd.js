@@ -194,7 +194,6 @@
 				info: function(command) {
 					// make sure a Samaritan is loaded already
 					if (ensure_state(this)) {
-						
 						// get personal info
 						switch (command) {
 							case "personal": {
