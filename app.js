@@ -49,6 +49,7 @@ app.get('/index', (req, res) => {
 // global variables
 const wsProvider = new WsProvider('ws://127.0.0.1:9944');
 const api = await ApiPromise.create({ provider: wsProvider });
+const hash_key = "12345678909876543212345678909870";
 
 cryptoWaitReady().then(() => {
     // load all available addresses and accounts
@@ -69,7 +70,7 @@ async function createAccount(req, res) {
             const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
 
             // create json file for user and commit to IPFS
-            const ret  = util.createProfile(mnemonic, pair.address);
+            const ret  = util.createProfile(pair.address, hash_key);
 
             // get IP address
             let ip = util.getClientAddress(req);
@@ -123,7 +124,7 @@ async function authAccount(req, res) {
                 // get state from IPFS using users CID
                 net.getFromIPFS(cid).then(arr => {
                     let json = util.Utf8ArrayToStr(arr);
-                    let decryptedData = util.decryptData(JSON.parse(json).data, pair.address.substring(0, 32));
+                    let decryptedData = util.decryptData(json, hash_key);
                     let json_data = JSON.parse(decryptedData);
 
                     util.sendProfileData(json_data, "", { bool: exist, cid: cid }, res);
@@ -142,22 +143,16 @@ async function modifySam(req, res) {
     // get state from IPFS using users CID
     await net.getFromIPFS(req.cid).then(arr => {
         let json = util.Utf8ArrayToStr(arr);
-        let decryptedData = util.decryptData(JSON.parse(json).data, req.addr(0, 32));
+        let decryptedData = util.decryptData(json, hash_key);
         let json_data = JSON.parse(decryptedData);
 
         // modify data
-        for (var k in json_data) {
-            if (json_data.hasOwnProperty(k) && k.toString() == req.prop) {
-                json_data.k = req.val;
-                break;
-            }
-        }
-
-        console.log(json_data);
-
+        json_data[req.prop] = req.val;
         (async function() {
             // commit to IPFS
-            await net.uploadToIPFS(json_data).then(cid => {
+            let js = util.encryptData(JSON.stringify(json_data), hash_key);
+
+            await net.uploadToIPFS(js).then(cid => {
                 console.log("The CID is  " + cid);
 
                 // record change onchain
@@ -187,14 +182,12 @@ app.post('/bhash', function (req, res) {
     //     // get IP address
     // });
     (async function () {
-        const sam = await api.query.samaritan.samPool("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty");
-        let cid = sam.toHuman().cid;
+        let cid = "QmYPkfgFdaQHSfPwG54VvifaBAfke32ZwkGPazLCQzmVe8";
 
-        net.getFromIPFS(cid).then(arr => {
-            let mnemonic = "valve start borrow magic mean multiply verb width mimic grain awesome bag";
+        net.getFromIPFS(cid).then(arr => {  
             let json = util.Utf8ArrayToStr(arr);
             
-            let decryptedData = util.decryptData(JSON.parse(json).data, mnemonic.substring(0, 32));
+            let decryptedData = util.decryptData(json, hash_key);
             console.log(decryptedData);
         });
 
@@ -213,7 +206,12 @@ app.post('/auth_account', function (req, res) {
 
 // modify Samaritan
 app.post('/mod_state', function (req, res) {
-    modifySam(req, res);
+    modifySam(req.body, res);
+})
+
+// upload app
+app.post('/upload_app', function (req, res) {
+    console.log(req);
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))

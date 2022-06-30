@@ -72,7 +72,7 @@
 													})
 												})
 												.then(res => {
-													(async function handle() {
+													(async function () {
 														await res.json().then(res => {
 															let bool = res.var.bool;
 
@@ -118,7 +118,7 @@
 													})
 												})
 												.then(res => {
-													(async function handle() {
+													(async function () {
 														await res.json().then(res => {
 															var seed = res.seed;
 															
@@ -176,12 +176,19 @@
 					this.echo("[[b;green;]info {param}:] Get information about Samaritan. {param} can be one of many commands:\
 						\n 1. [[b;green;]`personal`:] Load users personal details.");
 					this.echo("[[b;green;]mod {attribute} {value}:] Change the personal properties of a Samaritan. e.g mod age 27");
-					
+					this.echo("[[b;green;]create:] Sign an app and add it into the Samaritan Ability Pool");
 
 				},
 
 				reset: function() {
 					this.reset();
+				},
+
+				create: function() {
+					// make sure a Samaritan is loaded already
+					// if (ensure_state(this)) {
+						document.querySelector(".upload").style.display = "block";
+					// }
 				},
 
 				info: function(command) {
@@ -199,8 +206,8 @@
 								this.echo(`Sex: ${sam.data.sex}`);
 								this.echo(`D-o-B: ${sam.data.d_o_b}`);
 								this.echo(`Religion: ${sam.data.religion}`);
-								this.echo(`Telephone: ${sam.data.telephone.map( (e) => (e) ).join(' ')}`);
-								this.echo(`Email: ${sam.data.email.map( (e) => (e) ).join(' ')}`);
+								this.echo(`Telephone: ${sam.data.telephone}`);
+								this.echo(`Email: ${sam.data.email}`);
 							}
 						}
 					}
@@ -218,8 +225,13 @@
 							}
 
 						// check if property specified is correct
-						if (!mem)
+						if (!mem) {
 							this.error(`Property "${prop}" not found`);
+							return;
+						}
+
+						this.echo("Updating your state...");
+						this.pause();
 
 						// send to server modify and commit to IPFS
 						fetch ("/mod_state", {
@@ -229,16 +241,22 @@
 							},
 							body: JSON.stringify({
 								"cid": sam.cid,
-								"addr": sam.addr,
+								"addr": sam.data.addr,
 								"name": pseudo_name,
 								'prop': prop,
 								'val': value
 							})
 						})
 						.then(res => {
-							(async function handle() {
+							(async function () {
 								await res.json().then(res => {
+									
+									// save details locally
+									sam.data = res.data;
+									sam.cid = res.var.cid;
 
+									main.resume();
+									main.echo("Your state has been updated!");
 								});
 							})();  
 						});

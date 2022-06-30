@@ -9,7 +9,7 @@ let getClientAddress = (req)  => {
 };
 
 // create json file and encrypt the users basic data in
-let createProfile = (seed, address) => {
+let createProfile = (address, hash_key) => {
     let json =  {
         "addr": address,
         "name": "",
@@ -23,12 +23,11 @@ let createProfile = (seed, address) => {
     };
 
     json = JSON.stringify(json);
-    let js_data = {
-        "data": encryptData(json, seed.substr(0, 32))
-    };    
+
+    let js_data = encryptData(json, hash_key)
 
     let ret = {
-        prof: JSON.stringify(js_data),
+        prof: js_data,
         user_det: json
     }
 
@@ -119,4 +118,4 @@ function Utf8ArrayToStr(array) {
     return out;
 }
 
-module.exports = { getClientAddress, createProfile, sendProfileData, Utf8ArrayToStr, decryptData };
+module.exports = { getClientAddress, createProfile, sendProfileData, Utf8ArrayToStr, decryptData, encryptData };

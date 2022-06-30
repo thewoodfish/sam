@@ -12,6 +12,29 @@
 		span {
 			--size: 1.0;
 		}
+
+		.upload {
+			width: 400px;
+			box-shadow: 1px 2px 1px 1px black;
+			position: fixed;
+			top: 180px;
+			z-index: 999999999999999999;
+			background: #fff;
+			padding: 10px;
+			text-align: center;
+			left: 400px;
+			border-radius: 10px;
+			display: none;
+		}
+
+		.cancel {
+			float: right !important;
+			cursor: pointer;
+		}
+
+		.submit {
+			margin: 20px;
+		}
 	</style>
 </head>
 
@@ -26,6 +49,65 @@
 												  A Digital Identity Solution. To begin, enter "start"; For help, enter "help"
 																												
 	   </template>
+<!-- 
+	   <div class="game">
+			<h3>A simple superhero naming app</h3>
+			<p>Check which superhero you are.</p>
+			<button>Display my hero-self</button>
+	   </div> -->
+
+	   	<div class="upload">
+			<small><a class="cancel">cancel</a></small>
+			<h3>Upload an App to the Samaritan Ability Pool</h3>
+			<p>Sign your app to be validated by the network and approved into the Ability Pool for download</p>
+			<form>
+				<hr>
+				<input type="file" class="file">
+				<hr><br>
+				<button class="submit" onclick="return false">Submit to network</button>
+			</form>
+   		</div>
+		
+		<script>
+			let up = document.querySelector(".upload");
+
+			document.body.addEventListener("click", (e) => {
+				switch (e.target.className) {
+					case "cancel": {
+						up.style.display = "none";
+						break;
+					}
+
+					case "submit":  {
+						var data = new FormData();
+						data.append("app", document.querySelector(".file").value)
+
+						// upload to server
+						fetch ("/upload_app", {
+							method: 'post',
+							headers: {
+								'Content-Type': 'multipart/form-data'
+							},
+							body: data
+						})
+						.then(res => {
+							(async function () {
+								await res.json().then(res => {
+									
+									// save details locally
+									sam.data = res.data;
+									sam.cid = res.var.cid;
+
+									main.resume();
+									main.echo("Your state has been updated!");
+								});
+							})();  
+						});
+					}
+				}
+			})
+		</script>
+
 	<script src="js/cmd.js"></script>
 </body>
 

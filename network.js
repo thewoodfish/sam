@@ -9,21 +9,14 @@ const __dirname = path.dirname(__filename);
 
 import * as IPFS from "ipfs-core";
 
+
 const toBuffer = require('it-to-buffer');
 
-async function constructHeader(pair) {
-    // Construct auth header
-    const sig = pair.sign(pair.address);
-    const sigHex = '0x' + Buffer.from(sig).toString('hex');
-    
-    return Buffer.from(`sub-${pair.address}:${sigHex}`).toString('base64');
-}
+const ipfs = await IPFS.create();
 
 export async function uploadToIPFS(path) {
-    const ipfs = await IPFS.create();
     const { cid } = await ipfs.add(path);
 
-    console.log("dikbjdns");
     console.info(cid);
 
     if (cid) 
@@ -35,7 +28,6 @@ export async function uploadToIPFS(path) {
 }
 
 export async function getFromIPFS(cid) {
-    const ipfs = await IPFS.create();
     const bufferedContents = await toBuffer(ipfs.cat(cid)); // returns a Buffer
     
     return bufferedContents;
