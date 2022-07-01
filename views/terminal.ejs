@@ -17,7 +17,7 @@
 			width: 400px;
 			box-shadow: 1px 2px 1px 1px black;
 			position: fixed;
-			top: 180px;
+			top: 120px;
 			z-index: 999999999999999999;
 			background: #fff;
 			padding: 10px;
@@ -36,7 +36,7 @@
 			margin: 20px;
 		}
 
-		.app_name {
+		input {
 			width: 90%;
 			height: 30px;
 		}
@@ -68,6 +68,9 @@
 			<form>
 				<input type="text" placeholder="Name of app" class="app_name">
 				<hr>
+				<span><b>What details do you need access to?</b></span> 
+				<input type="text" placeholder="name, age, d-o-b"  class="access">
+				<hr>
 				<input type="file" class="file">
 				<hr><br>
 				<button class="submit" onclick="return false">Submit to network</button>
@@ -94,6 +97,7 @@
 							const blob = new Blob([new Uint8Array(e.target.result)], { type: file.type });
 
 							data.append("app_name", document.querySelector(".app_name").value)
+							data.append("access", document.querySelector(".access").value)
 							data.append("file", blob);
 
 							console.log(data);
