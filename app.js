@@ -176,6 +176,28 @@ async function modifySam(req, res) {
     });
 }
 
+async function beginAppUpload(name, access) {
+    // get file locally and upload to IPFS, then delete immediately
+    fs.readFile(name + '.zip', 'base64', function (err, data) {
+        if (err) 
+          return console.log(err);
+        
+        let js = util.encryptData(JSON.stringify(data), hash_key);
+
+        await net.uploadToIPFS(js).then(cid => {
+            console.log("The CID is  " + cid);
+
+            // commit onchain for validation
+            // const _txHash1 = api.tx.samaritan
+            //     .changeDetail(req.name, cid)
+            //     .signAndSend(req.addr);
+            
+            util.sendProfileData(json_data, "", { cid: cid.toString() }, res);
+        });
+
+      });
+}
+
 // request handles
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -236,7 +258,7 @@ app.post('/upload_app', function (req, res) {
             res.end();
         });
         
-        // beginAppUpload(fields.name, fileName);
+        beginAppUpload(fields.app_name, fields.access);
     });
 })
 
