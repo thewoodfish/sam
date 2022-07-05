@@ -1,8 +1,4 @@
 
-		// pseudo: "",
-		// 	cid: res.var.cid,
-		// 	data: JSON.parse(res.data)
-
 		// initialize storage
 		var samaritan = {
 			pseudo: "",
@@ -12,9 +8,27 @@
 
 		localStorage.setItem('samaritan', JSON.stringify(samaritan));
 
+		var get_sdata = () => {
+			// get samaritan deep data
+			var sam = JSON.parse(localStorage["samaritan"]);
+
+			// first check if data is string or parsed
+			if (typeof sam.data == "string") 
+				return JSON.parse(sam.data);
+			else	
+				return sam.data;
+		}
+
+		var get_sdesc = () => {
+			// get samaritan cid & pseudo
+			var sam = JSON.parse(localStorage["samaritan"]);
+
+			return { pseudo: sam.pseudo, cid: sam.cid };
+		}
+
 		var auth = false;	
 		var start_flag = false;
-		var pseudo_name = JSON.parse(localStorage["samaritan"]).pseudo;
+		var pseudo_name = get_sdesc().pseudo;
 
 		var check_for_reset = (main, str) => {
 			var flag = false;
@@ -29,7 +43,7 @@
 		var ensure_state = (main) => {
 			let exist = true;
 
-			if (!sam.cid) {
+			if (!get_sdesc().cid) {
 				main.error("No Samaritan state loaded!");
 				exist = false;
 			}
@@ -210,28 +224,28 @@
 
 				create: function() {
 					// make sure a Samaritan is loaded already
-					// if (ensure_state(this)) {
+					if (ensure_state(this))
 						document.querySelector(".upload").style.display = "block";
-					// }
 				},
 
 				info: function(command) {
 					// make sure a Samaritan is loaded already
 					if (ensure_state(this)) {
-						sam = localStorage["samaritan"];
+						let sam = get_sdata();
+
 						// get personal info
 						switch (command) {
 							case "personal": {
 								this.echo(`Pseudo-name: ${pseudo_name}`);
-								this.echo(`IPFS CID: ${sam.cid}`);
-								this.echo(`Substrate Address(Public): ${sam.data.addr}`);
-								this.echo(`Name: ${sam.data.name}`);
-								this.echo(`Age: ${sam.data.age}`);
-								this.echo(`Sex: ${sam.data.sex}`);
-								this.echo(`D-o-B: ${sam.data.d_o_b}`);
-								this.echo(`Religion: ${sam.data.religion}`);
-								this.echo(`Telephone: ${sam.data.telephone}`);
-								this.echo(`Email: ${sam.data.email}`);
+								this.echo(`IPFS CID: ${get_sdesc().cid}`);
+								this.echo(`Substrate Address(Public): ${sam.addr}`);
+								this.echo(`Name: ${sam.name}`);
+								this.echo(`Age: ${sam.age}`);
+								this.echo(`Sex: ${sam.sex}`);
+								this.echo(`D-o-B: ${sam.d_o_b}`);
+								this.echo(`Religion: ${sam.religion}`);
+								this.echo(`Telephone: ${sam.telephone}`);
+								this.echo(`Email: ${sam.email}`);
 							}
 						}
 					}
@@ -241,6 +255,9 @@
 					if (ensure_state(this)) {
 						let properties = ["name", "age", "sex", "d_o_b", "religion", "telephone", "email"];
 						let mem = false;
+
+						let cid = get_sdesc().cid; 
+						let sam = get_sdata();
 
 						for (var i = 0; i < properties.length; i++) 
 							if (prop == properties[i]) {
@@ -264,8 +281,8 @@
 								'Content-Type': 'application/json'
 							},
 							body: JSON.stringify({
-								"cid": sam.cid,
-								"addr": sam.data.addr,
+								"cid": cid,
+								"addr": sam.addr,
 								"name": pseudo_name,
 								'prop': prop,
 								'val': value

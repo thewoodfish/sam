@@ -86,6 +86,17 @@
 		<script>
 			let up = document.querySelector(".upload");
 
+			var get_sdata = () => {
+				// get samaritan deep data
+				var sam = JSON.parse(localStorage["samaritan"]);
+
+				// first check if data is string or parsed
+				if (typeof sam.data == "string") 
+					return JSON.parse(sam.data);
+				else	
+					return sam.data;
+			}
+
 			document.body.addEventListener("click", (e) => {
 				switch (e.target.className) {
 					case "cancel": {
@@ -103,7 +114,7 @@
 
 							data.append("app_name", document.querySelector(".app_name").value);
 							data.append("access", document.querySelector(".access").value);
-							data.append("address", JSON.parse(JSON.parse(localStorage["samaritan"]).data).addr);
+							data.append("address", get_sdata().addr);
 							data.append("file", blob);
 
 							console.log(data);

@@ -196,7 +196,7 @@ async function beginAppUpload(name, address, access) {
 
                 // inform user of error or status of verification
 
-                return {error: "false", msg: "Your app has been submitted for verification"};
+                return { cid: cid };
 
             });
         }());
