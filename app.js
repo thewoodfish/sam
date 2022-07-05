@@ -176,7 +176,7 @@ async function modifySam(req, res) {
     });
 }
 
-async function beginAppUpload(name, address, access) {
+async function beginAppUpload(name, address, access, res) {
     // get file locally and upload to IPFS, then delete immediately
     fs.readFile(uploadFolder + name, 'base64', function (err, data) {
         if (err) 
@@ -190,18 +190,16 @@ async function beginAppUpload(name, address, access) {
                 console.log("The CID is  " + cid);
 
                 // submit app for onchain validation
-                const _txHash = api.tx.samaritan
-                    .uploadApp(name, cid, access)
-                    .signAndSend(address);
+                // const _txHash = api.tx.samaritan
+                //     .uploadApp(name, cid, access)
+                //     .signAndSend(address);
 
-                // inform user of error or status of verification
-
-                return { cid: cid };
-
+                // return cid for tracking
+                res.send({ name: name, cid: cid.toString() });
             });
         }());
 
-      });
+    });
 }
 
 // request handles
@@ -250,6 +248,7 @@ app.post('/mod_state', function (req, res) {
 // upload app
 app.post('/upload_app', function (req, res) {
     var form = new formidable.IncomingForm();
+    var response = {};
     form.parse(req, function(err, fields, files) {
         if (err) {
             console.error(err.message);
@@ -260,12 +259,10 @@ app.post('/upload_app', function (req, res) {
         var newpath = uploadFolder + fields.app_name;
         fs.rename(oldpath, newpath, function (err) {
             if (err) throw err;
-            res.write('File uploaded and moved!');
-            res.end();
         });
         
-        res.send(beginAppUpload(fields.app_name, fields.address, fields.access));
+        beginAppUpload(fields.app_name, fields.address, fields.access, res);
     });
-})
+ })
 
 app.listen(port, () => console.log(`Listening on port ${port}`))

@@ -42,7 +42,8 @@
 		}
 
 		.alert {
-			color: red;
+			color: green;
+			font-size: 90%;
 		}
 	</style>
 </head>
@@ -127,14 +128,7 @@
 							.then(res => {
 								(async function () {
 									await res.json().then(res => {
-										let error = JSON.parse(res).error;
-										let msg = JSON.parse(res).msg;
-
-										if (error == "true") {
-
-										} else {
-											document.querySelector(".alert").innerText = msg;
-										}
+										document.querySelector(".alert").innerText = `${ res.name }'s onchain CID is ${ res.cid }.\n Use it to query the chain for verification status`;
 									});
 								})();  
 							});
