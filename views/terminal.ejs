@@ -40,6 +40,10 @@
 			width: 90%;
 			height: 30px;
 		}
+
+		.alert {
+			color: red;
+		}
 	</style>
 </head>
 
@@ -64,6 +68,7 @@
 	   	<div class="upload">
 			<small><a class="cancel">cancel</a></small>
 			<h3>Upload an App to the Samaritan Ability Pool</h3>
+			<p class="alert"></p>
 			<p>Sign your app to be validated by the network and approved into the Ability Pool for download</p>
 			<form>
 				<input type="text" placeholder="Name of app" class="app_name">
@@ -96,8 +101,9 @@
 							let data = new FormData();
 							const blob = new Blob([new Uint8Array(e.target.result)], { type: file.type });
 
-							data.append("app_name", document.querySelector(".app_name").value)
-							data.append("access", document.querySelector(".access").value)
+							data.append("app_name", document.querySelector(".app_name").value);
+							data.append("access", document.querySelector(".access").value);
+							data.append("address", JSON.parse(JSON.parse(localStorage["samaritan"]).data).addr);
 							data.append("file", blob);
 
 							console.log(data);
@@ -105,15 +111,19 @@
 							// upload to server
 							fetch ("/upload_app", {
 								method: 'post',
-								// headers: {
-								// 	'Content-Type': 'application/x-www-form-urlencoded'
-								// },
 								body: data
 							})
 							.then(res => {
 								(async function () {
 									await res.json().then(res => {
-										
+										let error = JSON.parse(res).error;
+										let msg = JSON.parse(res).msg;
+
+										if (error == "true") {
+
+										} else {
+											document.querySelector(".alert").innerText = msg;
+										}
 									});
 								})();  
 							});

@@ -1,10 +1,20 @@
-		var auth = false;	
-		var start_flag = false;
-		var pseudo_name = "";
-		var sam = {
+
+		// pseudo: "",
+		// 	cid: res.var.cid,
+		// 	data: JSON.parse(res.data)
+
+		// initialize storage
+		var samaritan = {
+			pseudo: "",
 			cid: "",
 			data: {}
 		};
+
+		localStorage.setItem('samaritan', JSON.stringify(samaritan));
+
+		var auth = false;	
+		var start_flag = false;
+		var pseudo_name = JSON.parse(localStorage["samaritan"]).pseudo;
 
 		var check_for_reset = (main, str) => {
 			var flag = false;
@@ -76,13 +86,21 @@
 														await res.json().then(res => {
 															let bool = res.var.bool;
 
-															sam.data = JSON.parse(res.data);
-															sam.cid = res.var.cid;
-															
+															// save locally
+															var samaritan = {
+																pseudo: pseudo_name,
+																cid: res.var.cid,
+																data: res.data
+															};
+
+															localStorage.setItem('samaritan', JSON.stringify(samaritan));
+
 															main.resume();
 
 															if (bool == "true") {
 																pseudo_name = name;
+																localStorage["samaritan"].pseudo = name;
+
 																main.echo("Authentication successful!");
 																main.echo(`Samaritan ${pseudo_name} successfully imported`);
 															} else 
@@ -122,15 +140,21 @@
 														await res.json().then(res => {
 															var seed = res.seed;
 															
-															// save details locally
-															sam.data = JSON.parse(res.data);
-															sam.cid = res.var.cid;
+															// save locally
+															var samaritan = {
+																pseudo: pseudo_name,
+																cid: res.var.cid,
+																data: res.data
+															};
+
+															localStorage.setItem('samaritan', JSON.stringify(samaritan));
 
 															main.resume();
 															main.echo('You have 30 seconds to copy your keys.');
 															main.echo(`Your Samaritan keys are: [[bg;green;]${seed}]`);
 
 															pseudo_name = name;
+															localStorage["samaritan"].pseudo = name;
 															
 															main.pause();
 															setTimeout(() => {
@@ -194,6 +218,7 @@
 				info: function(command) {
 					// make sure a Samaritan is loaded already
 					if (ensure_state(this)) {
+						sam = localStorage["samaritan"];
 						// get personal info
 						switch (command) {
 							case "personal": {
@@ -251,8 +276,13 @@
 								await res.json().then(res => {
 									
 									// save details locally
-									sam.data = res.data;
-									sam.cid = res.var.cid;
+									var samaritan = {
+										pseudo: pseudo_name,
+										cid: res.var.cid,
+										data: res.data
+									};
+
+									localStorage.setItem('samaritan', JSON.stringify(samaritan));
 
 									main.resume();
 									main.echo("Your state has been updated!");

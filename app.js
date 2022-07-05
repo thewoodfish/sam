@@ -176,24 +176,30 @@ async function modifySam(req, res) {
     });
 }
 
-async function beginAppUpload(name, access) {
+async function beginAppUpload(name, address, access) {
     // get file locally and upload to IPFS, then delete immediately
-    fs.readFile(name + '.zip', 'base64', function (err, data) {
+    fs.readFile(uploadFolder + name, 'base64', function (err, data) {
         if (err) 
           return console.log(err);
         
         let js = util.encryptData(JSON.stringify(data), hash_key);
 
-        await net.uploadToIPFS(js).then(cid => {
-            console.log("The CID is  " + cid);
+        (async function() {
 
-            // commit onchain for validation
-            // const _txHash1 = api.tx.samaritan
-            //     .changeDetail(req.name, cid)
-            //     .signAndSend(req.addr);
-            
-            util.sendProfileData(json_data, "", { cid: cid.toString() }, res);
-        });
+            await net.uploadToIPFS(js).then(cid => {
+                console.log("The CID is  " + cid);
+
+                // submit app for onchain validation
+                const _txHash = api.tx.samaritan
+                    .uploadApp(name, cid, access)
+                    .signAndSend(address);
+
+                // inform user of error or status of verification
+
+                return {error: "false", msg: "Your app has been submitted for verification"};
+
+            });
+        }());
 
       });
 }
@@ -258,7 +264,7 @@ app.post('/upload_app', function (req, res) {
             res.end();
         });
         
-        beginAppUpload(fields.app_name, fields.access);
+        res.send(beginAppUpload(fields.app_name, fields.address, fields.access));
     });
 })
 
