@@ -215,6 +215,7 @@
 						\n 1. [[b;green;]`personal`:] Load users personal details.");
 					this.echo("[[b;green;]mod {attribute} {value}:] Change the personal properties of a Samaritan. e.g mod age 27");
 					this.echo("[[b;green;]create:] Sign an app and add it into the Samaritan Ability Pool");
+					this.echo("[[b;green;]app_status: { App CID }] Check app verification status onchain with the Apps CID.");
 
 				},
 
@@ -249,6 +250,32 @@
 							}
 						}
 					}
+				},
+
+				app_status: function(cid) {
+					// check verificatio status of uploaded app onchain
+					this.echo("Checking verification status...");
+					this.pause();
+
+					// send to server modify and commit to IPFS
+					fetch ("/app_vstatus", {
+						method: 'post',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							"cid": cid
+						})
+					})
+					.then(res => {
+						(async function () {
+							await res.json().then(res => {
+
+								main.resume();
+								main.echo("Your state has been updated!");
+							});
+						})();  
+					});
 				},
 
 				mod: function(prop, value) {

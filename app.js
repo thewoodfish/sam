@@ -57,8 +57,8 @@ app.get('/index', (req, res) => {
 })
 
 // global variables
-const wsProvider = new WsProvider('ws://127.0.0.1:9944');
-const api = await ApiPromise.create({ provider: wsProvider });
+// const wsProvider = new WsProvider('ws://127.0.0.1:9944');
+// const api = await ApiPromise.create({ provider: wsProvider });
 const hash_key = "12345678909876543212345678909870";
 
 cryptoWaitReady().then(() => {
