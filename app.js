@@ -57,8 +57,8 @@ app.get('/index', (req, res) => {
 })
 
 // global variables
-// const wsProvider = new WsProvider('ws://127.0.0.1:9944');
-// const api = await ApiPromise.create({ provider: wsProvider });
+const wsProvider = new WsProvider('ws://127.0.0.1:9944');
+const api = await ApiPromise.create({ provider: wsProvider });
 const hash_key = "12345678909876543212345678909870";
 
 cryptoWaitReady().then(() => {
@@ -202,32 +202,43 @@ async function beginAppUpload(name, address, access, res) {
     });
 }
 
+async function checkVStatus(body, res) {
+    // get app CID
+    const cid = body.app_cid;
+
+    // query the temporary pool first
+    (async function() {
+        const app = await api.query.ability.tempPool(cid);
+
+        if (app.toHuman())
+            res.send({ cid: cid, status: "ongoing verification" });
+        else {
+            // app is still ongoing verification
+            const ability = await api.query.ability.abilityPool(cid);
+
+            if (ability.toHuman()) 
+                res.send({ cid: cid, status: "verification passed" });
+            else 
+                res.send({ cid: cid, status: "verification failed" });
+        }
+    }())
+}
+
 // request handles
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }))
  
 // test function
 app.post('/bhash', function (req, res) {
-    // res.send(`IP is ${util.getClientAddress(req)}`);
-    // const mnemonic = mnemonicGenerate();
-    // const { pair, json } = keyring.addUri(mnemonic, req.body.password, { name: req.body.name, created: Date.now() });
+    // Retrieve the last timestamp
+    (async function() {
+        const key = "buylink019";
+        const data = await api.query.ability.tempPool(key);
 
-    // net.uploadToIPFS("./profile.json").then(cid => {;
-                    
-    //     console.log("The CID is  " + cid);
-    //     // get IP address
-    // });
-    (async function () {
-        let cid = "QmYPkfgFdaQHSfPwG54VvifaBAfke32ZwkGPazLCQzmVe8";
 
-        net.getFromIPFS(cid).then(arr => {  
-            let json = util.Utf8ArrayToStr(arr);
-            
-            let decryptedData = util.decryptData(json, hash_key);
-            console.log(decryptedData);
-        });
-
+        console.log(data.toHuman());
     }());
+
 })
 
 // add account
@@ -263,6 +274,12 @@ app.post('/upload_app', function (req, res) {
         
         beginAppUpload(fields.app_name, fields.address, fields.access, res);
     });
- })
+})
+
+// check app verification status
+app.post('/check_vstatus', function (req, res) {
+    checkVStatus(req.body, res);
+})
+
 
 app.listen(port, () => console.log(`Listening on port ${port}`))

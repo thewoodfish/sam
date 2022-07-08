@@ -254,25 +254,38 @@
 
 				app_status: function(cid) {
 					// check verificatio status of uploaded app onchain
-					this.echo("Checking verification status...");
+					this.echo("Checking app verification status...");
 					this.pause();
 
 					// send to server modify and commit to IPFS
-					fetch ("/app_vstatus", {
+					fetch ("/check_vstatus", {
 						method: 'post',
 						headers: {
 							'Content-Type': 'application/json'
 						},
 						body: JSON.stringify({
-							"cid": cid
+							"app_cid": cid
 						})
 					})
 					.then(res => {
 						(async function () {
 							await res.json().then(res => {
+								var msg = "";
 
 								main.resume();
-								main.echo("Your state has been updated!");
+								switch (res.status) {
+									case "ongoing verification": 
+										msg = `[[b;green;]App with CID: "${res.cid}" is still under verification by the network]`;
+										break;
+									case "verification passed":
+										msg = `[[b;green;]App with CID: "${res.cid}" has been verified by the network. You can download it now!]`;
+										break;
+									default:
+										msg = `[[b;green;]App with CID: "${res.cid}" is not recognised by the network]`;
+										break;
+								}
+
+								main.echo(msg);
 							});
 						})();  
 					});
