@@ -70,7 +70,6 @@ function sendProfileData(profile, mnemonic, variable, res) {
     res.send(json);
 }
 
-
 function Utf8ArrayToStr(array) {
 
     // adopted from:

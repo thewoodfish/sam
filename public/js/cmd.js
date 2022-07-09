@@ -291,6 +291,40 @@
 					});
 				},
 
+				load: function(cmd) {
+					if (cmd == "apps") {
+						// query chain for user apps and store them in localStorage
+						this.echo("Fetching apps avaliable on network..");
+						this.pause();
+
+						fetch ("/load_apps", {
+							method: 'get',
+							headers: {
+								'Content-Type': 'application/json'
+							}
+						})
+						.then(res => {
+							(async function () {
+								await res.json().then(res => {
+									let apps = res.apps;
+
+									main.resume();
+									main.echo(`There are ${apps.length} apps currently on the network`);
+									// print info about apps avalible
+									apps.forEach(app => {
+										main.echo(" ");
+										main.echo(`Name: ${app.name}`);
+										main.echo(`CID: ${app.cid}`);
+										main.echo(`Developer: ${app.developer}`);
+										main.echo(`Permissions: ${app.permissions}`);
+										main.echo(" ");
+									});
+								});
+							})();  
+						});
+					}
+				},
+
 				mod: function(prop, value) {
 					if (ensure_state(this)) {
 						let properties = ["name", "age", "sex", "d_o_b", "religion", "telephone", "email"];
@@ -358,6 +392,9 @@
 				}, 
                 name: 'Samaritan',
 				historySize: 10,
-                prompt: '[[b;green;]>>> ]'
+                prompt: '[[b;green;]>>> ]',
+				onInit: function() {
+					
+				}
             });
         });

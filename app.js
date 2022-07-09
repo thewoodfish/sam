@@ -224,6 +224,14 @@ async function checkVStatus(body, res) {
     }())
 }
 
+
+async function loadApps(res) {
+    (async function() {
+        const apps = await api.query.ability.appsList();
+        res.send({ apps: apps });
+    }())
+}
+
 // request handles
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -233,10 +241,9 @@ app.post('/bhash', function (req, res) {
     // Retrieve the last timestamp
     (async function() {
         const key = "buylink019";
-        const data = await api.query.ability.tempPool(key);
+        const apps = await api.query.ability.appsList();
 
-
-        console.log(data.toHuman());
+        console.log(apps.toHuman());
     }());
 
 })
@@ -279,6 +286,11 @@ app.post('/upload_app', function (req, res) {
 // check app verification status
 app.post('/check_vstatus', function (req, res) {
     checkVStatus(req.body, res);
+})
+
+// load apps from chain
+app.post('/load_apps', function (req, res) {
+    loadApps(res);
 })
 
 
