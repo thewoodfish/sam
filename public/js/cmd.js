@@ -3,7 +3,8 @@
 		var samaritan = {
 			pseudo: "",
 			cid: "",
-			data: {}
+			data: {},
+			apps: []
 		};
 
 		localStorage.setItem('samaritan', JSON.stringify(samaritan));
@@ -289,6 +290,41 @@
 							});
 						})();  
 					});
+				},
+
+				download: function(app_cid) {
+					// make sure a Samaritan is loaded already
+					// if (ensure_state(this)) {
+						// download app from IPFS and record onchain
+						this.echo(`Fetching app with CID ${app_cid}...`);
+						this.pause();
+
+						fetch ("/download", {
+							method: 'post',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								"cid": app_cid,
+								"addr": get_sdesc().addr
+							})
+						})
+						.then(res => {
+							(async function () {
+								await res.json().then(res => {
+									main.resume();
+
+									if (res.err) 
+										main.error(`App with CID ${app_cid} is not present in the ability pool`);
+									else {
+										// add app to localStorage
+										localStorage["samaritan"].apps.push({ location: res.file.location, name: res.file.name });
+										main.echo(`${res.file.name} successfully downloaded!`);
+									}
+								});
+							})();  
+						});
+					// }
 				},
 
 				load: function(cmd) {

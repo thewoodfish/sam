@@ -176,30 +176,29 @@ async function modifySam(req, res) {
     });
 }
 
-async function beginAppUpload(name, address, access, res) {
+async function beginAppUpload(app_name, address, access, res) {
     // get file locally and upload to IPFS, then delete immediately
-    fs.readFile(uploadFolder + name, 'base64', function (err, data) {
-        if (err) 
-          return console.log(err);
-        
-        let js = util.encryptData(JSON.stringify(data), hash_key);
+    let name = uploadFolder + app_name + ".html";
+    
+    let js = util.encryptData(JSON.stringify({
+        name: name,
+        location: "file:///home/explorer/sam/public/files/"
+    }), hash_key);
 
-        (async function() {
+    (async function() {
 
-            await net.uploadToIPFS(js).then(cid => {
-                console.log("The CID is  " + cid);
+        await net.uploadToIPFS(js).then(cid => {
+            console.log("The CID is " + cid);
 
-                // submit app for onchain validation
-                // const _txHash = api.tx.samaritan
-                //     .uploadApp(name, cid, access)
-                //     .signAndSend(address);
+            // submit app for onchain validation
+            // const _txHash = api.tx.samaritan
+            //     .uploadApp(app_name, cid, access)
+            //     .signAndSend(address);
 
-                // return cid for tracking
-                res.send({ name: name, cid: cid.toString() });
-            });
-        }());
-
-    });
+            // return cid for tracking
+            res.send({ name: name, cid: cid.toString() });
+        });
+    }());
 }
 
 async function checkVStatus(body, res) {
@@ -225,10 +224,28 @@ async function checkVStatus(body, res) {
 }
 
 
-async function loadApps(res) {
+async function downloadApp(body, res) {
     (async function() {
-        const apps = await api.query.ability.appsList();
-        res.send({ apps: apps });
+        const cid = body.cid;
+        // first check onchain if the app exists
+        let app = await api.query.ability.abilityPool(cid);
+
+        if (app.toHuman()) {
+            // dowload from IPFS
+            await net.getFromIPFS(cid).then(arr => {
+                let json = util.Utf8ArrayToStr(arr);
+                let decryptedData = util.decryptData(json, hash_key);
+                let json_data = JSON.parse(decryptedData);
+        
+                // record download onchain
+                // const _txHash = api.tx.ability
+                //     .downloadApp(cid)
+                //     .signAndSend(body.addr);
+
+                res.send({ file: { location: json_data.location, name: json_data.name }, err: false });
+            });
+        } else
+            res.send({ file: "", err: true });
     }())
 }
 
@@ -240,10 +257,10 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.post('/bhash', function (req, res) {
     // Retrieve the last timestamp
     (async function() {
-        const key = "buylink019";
-        const apps = await api.query.ability.appsList();
+        const cid = "god_of_war";
+        let app = await api.query.ability.abilityPool(cid);
 
-        console.log(apps.toHuman());
+        console.log(app.toHuman());
     }());
 
 })
@@ -274,7 +291,7 @@ app.post('/upload_app', function (req, res) {
         }
 
         var oldpath = files.file.filepath;
-        var newpath = uploadFolder + fields.app_name;
+        var newpath = uploadFolder + fields.app_name + ".html";
         fs.rename(oldpath, newpath, function (err) {
             if (err) throw err;
         });
@@ -289,8 +306,14 @@ app.post('/check_vstatus', function (req, res) {
 })
 
 // load apps from chain
-app.post('/load_apps', function (req, res) {
+app.get('/load_apps', function (req, res) {
     loadApps(res);
+})
+
+
+// download app from IPFS and commit onchain
+app.post('/download', function (req, res) {
+    downloadApp(req.body, res);
 })
 
 
