@@ -105,7 +105,8 @@
 															var samaritan = {
 																pseudo: pseudo_name,
 																cid: res.var.cid,
-																data: res.data
+																data: res.data,
+																apps: []
 															};
 
 															localStorage.setItem('samaritan', JSON.stringify(samaritan));
@@ -159,7 +160,8 @@
 															var samaritan = {
 																pseudo: pseudo_name,
 																cid: res.var.cid,
-																data: res.data
+																data: res.data,
+																apps: []
 															};
 
 															localStorage.setItem('samaritan', JSON.stringify(samaritan));
@@ -217,6 +219,9 @@
 					this.echo("[[b;green;]mod {attribute} {value}:] Change the personal properties of a Samaritan. e.g mod age 27");
 					this.echo("[[b;green;]create:] Sign an app and add it into the Samaritan Ability Pool");
 					this.echo("[[b;green;]app_status: { App CID }] Check app verification status onchain with the Apps CID.");
+					this.echo("[[b;green;]download: { App CID }] Download APplication from the network.");
+					this.echo("[[b;green;]lauch: Launch the test application available");
+					this.echo("[[b;green;]revoke: { App CID } Revoke app permissions onchain");
 
 				},
 
@@ -318,7 +323,11 @@
 										main.error(`App with CID ${app_cid} is not present in the ability pool`);
 									else {
 										// add app to localStorage
-										localStorage["samaritan"].apps.push({ location: res.file.location, name: res.file.name });
+										let sam = JSON.parse(localStorage["samaritan"]);
+										sam.apps = [{ location: res.file.location, name: res.file.name }];
+
+										localStorage.setItem('samaritan', JSON.stringify(sam));
+										
 										main.echo(`${res.file.name} successfully downloaded!`);
 									}
 								});
@@ -355,6 +364,46 @@
 										main.echo(`Permissions: ${app.permissions}`);
 										main.echo(" ");
 									});
+								});
+							})();  
+						});
+					}
+				},
+ 
+				launch: function() {
+					if (ensure_state(this)) {
+						let iframe = document.getElementsByTagName("iframe")[0];
+						iframe.style.display = "block";
+						iframe.src = "./index";
+					}
+				},
+
+				revoke: function(cid) {
+					if (ensure_state(this)) {
+
+						this.echo("Revoking permissions...");
+						this.pause();
+
+						// send to server modify and commit to IPFS
+						fetch ("/give_app_permission", {
+							method: 'post',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								"cid": cid,
+								"allow": false
+							})
+						})
+						.then(res => {
+							(async function () {
+								await res.json().then(res => {
+									if (res.status)
+										main.echo("Permissions successfully revoked.");
+
+
+									main.resume();
+
 								});
 							})();  
 						});
@@ -406,7 +455,8 @@
 									var samaritan = {
 										pseudo: pseudo_name,
 										cid: res.var.cid,
-										data: res.data
+										data: res.data,
+										apps: []
 									};
 
 									localStorage.setItem('samaritan', JSON.stringify(samaritan));

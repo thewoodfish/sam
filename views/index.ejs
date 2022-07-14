@@ -1,27 +1,69 @@
 <!DOCTYPE html>
 <html>
-    <head></head>
+    <head>
+        <style>
+            .ask_perm {
+                padding: 10px;
+                box-shadow: 3px 2px 14px black;
+                text-align: center;
+                display: none;
+            }
+
+
+            .end {
+                float: right !important;
+                cursor: pointer;
+            }
+        </style>
+    </head>
     <body>
-        <h1 class="head">Thi is greatclea</h1>
+        <small><a class="end close_iframe">cancel</a></small>
+        <h1 class="head">God Of War</h1>
+        <small class="app-cid" data-cid="buylink001"></small>
+
+        <div class="ask_perm">
+            <p>Kindly Authorize this app to access the following information</p>
+            <p class="perms"></p>
+            <button class="auth">Authorize</button>
+        </div>
+
+        <h3 class="welcome"></h3>
+        <i class="innk"></i>
+
+        <script src="js/sdk.js"></script>
         <script>
-            fetch ("/bhash", {
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Allow_api_xyx' : 'gHud*3n29(2#n1u!'
-                },
-                body: JSON.stringify({
-                    'name': 'Samaritan', 'type': 'Identity'
-                })
-            })
-            .then(res => {
-                (async function handle() {
-                    await res.text().then(reslt => {
-                        console.log(reslt);
-                        document.querySelector('.head').innerText = reslt;
-                    });
-                })();  
-            });
+            var doc = document;
+
+            this.addEventListener("load", async () => {
+                let details;
+                details = await initialize_application();
+
+                if (!details.error) 
+                    main();
+                else 
+                    console.log(details.error);
+
+                doc.addEventListener("click", (e) => {
+                    switch (e.target.className) {
+                        case "auth": 
+                            (async function() {
+                                details = await authorize_application();
+
+                                if (!details.error) 
+                                    main();
+                                else 
+                                    console.log(details.error);
+                            })();
+                            break;
+                    }
+                }, false);
+
+                function main() {
+                    doc.querySelector('.welcome').innerHTML = `Welcome ${details.result[0]}!`;
+                    doc.querySelector('.innk').innerHTML = `We can see you're ${details.result[1]} years old`;
+                }
+            }, false);
+            
         </script>
     </body>
 </html>

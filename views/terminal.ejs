@@ -45,6 +45,17 @@
 			color: green;
 			font-size: 90%;
 		}
+
+		.app_loader {
+			height: 300px;
+			width: 500px;
+			z-index: 99999999999999999999999999;
+			position: fixed;
+			top: 180px;
+			left: 400px;
+			background-color: #fff;
+			display: none;
+		}
 	</style>
 </head>
 
@@ -83,6 +94,9 @@
 			</form>
    		</div>
 
+		<iframe class="app_loader" src="">
+		</iframe>
+
 		<script src="js/cmd.js"></script>
 		<script>
 			let up = document.querySelector(".upload");
@@ -102,6 +116,12 @@
 				switch (e.target.className) {
 					case "cancel": {
 						up.style.display = "none";
+						break;
+					}
+
+
+					case "end": {
+						document.querySelector("app_loader").style.display = "none";
 						break;
 					}
 

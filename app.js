@@ -181,8 +181,8 @@ async function beginAppUpload(app_name, address, access, res) {
     let name = uploadFolder + app_name + ".html";
     
     let js = util.encryptData(JSON.stringify({
-        name: name,
-        location: "file:///home/explorer/sam/public/files/"
+        name: app_name,
+        location: "file:///home/explorer/sam/public/files/" + app_name + ".html"
     }), hash_key);
 
     (async function() {
@@ -196,7 +196,7 @@ async function beginAppUpload(app_name, address, access, res) {
             //     .signAndSend(address);
 
             // return cid for tracking
-            res.send({ name: name, cid: cid.toString() });
+            res.send({ name: app_name, cid: cid.toString() });
         });
     }());
 }
@@ -228,9 +228,9 @@ async function downloadApp(body, res) {
     (async function() {
         const cid = body.cid;
         // first check onchain if the app exists
-        let app = await api.query.ability.abilityPool(cid);
+        // let app = await api.query.ability.abilityPool(cid);
 
-        if (app.toHuman()) {
+        // if (app.toHuman()) {
             // dowload from IPFS
             await net.getFromIPFS(cid).then(arr => {
                 let json = util.Utf8ArrayToStr(arr);
@@ -244,12 +244,58 @@ async function downloadApp(body, res) {
 
                 res.send({ file: { location: json_data.location, name: json_data.name }, err: false });
             });
-        } else
-            res.send({ file: "", err: true });
+        // } else
+        //     res.send({ file: "", err: true });
     }())
 }
 
-// request handles
+async function appDetail(body, res) {
+    (async function() {
+        const cid = body.cid;
+
+        let app = await api.query.ability.abilityPool(cid);
+
+        if (app.toHuman()) {
+            res.send({ app: app.toHuman(), err: false });
+        } else
+            res.send({ app: {}, err: true });
+    }())
+}
+
+async function changePermissions(body, res) {
+    // (async function() {
+
+    //     // record change onchain
+    //     // const _txHash = api.tx.ability
+    //     //     .changePermissions(cid, body.allow)
+    //     //     .signAndSend(body.addr);
+    // }())
+
+    res.send({ status: true });
+}
+
+async function isAuth(body, res) {
+    let cast = false;
+    (async function() {
+        const cid = body.cid;
+        let download = await api.query.ability.downloads(cid);
+        let result = download.toHuman();
+
+        if (result) {
+            for (var i = 0; i < result.length; i++) {
+                if (result[i].account == body.addr) {
+                    result[i].allow ? res.send({ auth: true }) : res.send({ auth: false });
+                    return;
+                }
+            }
+        }
+        
+        res.send({ auth: false });
+    }())
+}
+ 
+
+// request handles 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }))
  
@@ -314,6 +360,22 @@ app.get('/load_apps', function (req, res) {
 // download app from IPFS and commit onchain
 app.post('/download', function (req, res) {
     downloadApp(req.body, res);
+})
+
+// get app details
+app.post('/get_app', function (req, res) {
+    appDetail(req.body, res);
+})
+
+// change app permissions
+app.post('/give_app_permission', function (req, res) {
+    changePermissions(req.body, res);
+})
+
+
+// check if user gives permission to apps
+app.post('/is_auth', function (req, res) {
+    isAuth(req.body, res);
 })
 
 
