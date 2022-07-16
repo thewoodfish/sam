@@ -85,17 +85,17 @@ async function createAccount(req, res) {
             // get IP address
             let ip = util.getClientAddress(req);
 
-            // const _txHash = api.tx.samaritan
-            //     .signIn(ip)
-            //     .signAndSend(pair.address);
+            const _txHash = api.tx.samaritan
+                .signIn(ip)
+                .signAndSend(pair.address);
 
             // commit to IPFS
             await net.uploadToIPFS(ret.prof).then(cid => {
                 console.log("The CID is  " + cid);
 
-                // const _txHash1 = api.tx.samaritan
-                //     .changeDetail(req.body.name, cid)
-                //     .signAndSend(pair.address);
+                const _txHash1 = api.tx.samaritan
+                    .changeDetail(req.body.name, cid)
+                    .signAndSend(pair.address);
                 
                 util.sendProfileData(ret.user_det, mnemonic, { cid: cid.toString() }, res);
             });
@@ -123,9 +123,9 @@ async function authAccount(req, res) {
 
             (async function() {
                 // record sign-in onchain
-                // const _txHash = api.tx.samaritan
-                //     .signIn(ip)
-                //     .signAndSend(pair.address);
+                const _txHash = api.tx.samaritan
+                    .signIn(ip)
+                    .signAndSend(pair.address);
 
                 // get CID from onchain storage
                 const sam = await api.query.samaritan.samPool(pair.address);
@@ -166,9 +166,9 @@ async function modifySam(req, res) {
                 console.log("The CID is  " + cid);
 
                 // record change onchain
-                // const _txHash1 = api.tx.samaritan
-                //     .changeDetail(req.name, cid)
-                //     .signAndSend(req.addr);
+                const _txHash1 = api.tx.samaritan
+                    .changeDetail(req.name, cid)
+                    .signAndSend(req.addr);
                 
                 util.sendProfileData(json_data, "", { cid: cid.toString() }, res);
             });
@@ -191,9 +191,9 @@ async function beginAppUpload(app_name, address, access, res) {
             console.log("The CID is " + cid);
 
             // submit app for onchain validation
-            // const _txHash = api.tx.samaritan
-            //     .uploadApp(app_name, cid, access)
-            //     .signAndSend(address);
+            const _txHash = api.tx.samaritan
+                .uploadApp(app_name, cid, access)
+                .signAndSend(address);
 
             // return cid for tracking
             res.send({ name: app_name, cid: cid.toString() });
@@ -238,9 +238,9 @@ async function downloadApp(body, res) {
                 let json_data = JSON.parse(decryptedData);
         
                 // record download onchain
-                // const _txHash = api.tx.ability
-                //     .downloadApp(cid)
-                //     .signAndSend(body.addr);
+                const _txHash = api.tx.ability
+                    .downloadApp(cid)
+                    .signAndSend(body.addr);
 
                 res.send({ file: { location: json_data.location, name: json_data.name }, err: false });
             });
@@ -263,13 +263,13 @@ async function appDetail(body, res) {
 }
 
 async function changePermissions(body, res) {
-    // (async function() {
+    (async function() {
 
-    //     // record change onchain
-    //     // const _txHash = api.tx.ability
-    //     //     .changePermissions(cid, body.allow)
-    //     //     .signAndSend(body.addr);
-    // }())
+        // record change onchain
+        const _txHash = api.tx.ability
+            .changePermissions(cid, body.allow)
+            .signAndSend(body.addr);
+    }())
 
     res.send({ status: true });
 }
@@ -290,7 +290,7 @@ async function isAuth(body, res) {
             }
         }
         
-        res.send({ auth: false });
+        res.send({ auth: true });
     }())
 }
  
