@@ -228,9 +228,9 @@ async function downloadApp(body, res) {
     (async function() {
         const cid = body.cid;
         // first check onchain if the app exists
-        // let app = await api.query.ability.abilityPool(cid);
+        let app = await api.query.ability.abilityPool(cid);
 
-        // if (app.toHuman()) {
+        if (app.toHuman()) {
             // dowload from IPFS
             await net.getFromIPFS(cid).then(arr => {
                 let json = util.Utf8ArrayToStr(arr);
@@ -244,8 +244,8 @@ async function downloadApp(body, res) {
 
                 res.send({ file: { location: json_data.location, name: json_data.name }, err: false });
             });
-        // } else
-        //     res.send({ file: "", err: true });
+        } else
+            res.send({ file: "", err: true });
     }())
 }
 
